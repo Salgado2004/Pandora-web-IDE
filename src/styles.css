@@ -1,0 +1,299 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #242238;
+  background: #f7f7fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  border-bottom: 1px solid #e4e3ed;
+  background: #fff;
+}
+
+.app-header span {
+  color: #716e83;
+  font-size: 14px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+.breadcrumb-link,
+.breadcrumb-current {
+  border: 0;
+  background: transparent;
+  color: #716e83;
+  font: inherit;
+}
+
+.breadcrumb-link {
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: #5e4e9b;
+  cursor: pointer;
+}
+
+.breadcrumb-link:hover {
+  background: #f2effc;
+}
+
+.breadcrumb-current {
+  padding: 0;
+}
+
+.editor-title {
+  display: none;
+}
+
+.node-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.new-node-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #c8c4d8;
+  border-radius: 6px;
+  background: #fff;
+  color: #242238;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-button {
+  padding: 7px 12px;
+  border: 1px solid #c8c4d8;
+  border-radius: 6px;
+  background: #fff;
+  color: #242238;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.export-button:hover {
+  border-color: #7163a6;
+  background: #f5f2ff;
+}
+
+.export-error {
+  width: 280px;
+  padding: 8px;
+  margin: 8px 0 0;
+  border: 1px solid #d9534f;
+  border-radius: 6px;
+  background: #fff5f5;
+  color: #b42318 !important;
+  font-size: 12px !important;
+}
+
+.program-actions {
+  margin-top: 22px;
+}
+
+.new-node-button:hover,
+.new-node-button[aria-expanded="true"] {
+  border-color: #7163a6;
+  background: #f5f2ff;
+}
+
+.new-node-button > span {
+  color: #5e4e9b;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.node-menu-popover {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 190px;
+  padding: 8px;
+  border: 1px solid #e0ddeb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(36 34 56 / 14%);
+}
+
+.node-menu-popover > strong {
+  display: block;
+  padding: 5px 8px 8px;
+  color: #716e83;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.node-menu-popover button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 9px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #242238;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.node-menu-popover button:hover {
+  background: #f3f1f8;
+}
+
+.node-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  border: 1px solid #34324a;
+  border-radius: 4px;
+  color: #34324a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.function-icon {
+  background: #e4d4ff;
+  font-size: 17px;
+}
+
+.editor-layout {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+}
+
+.canvas {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Pandora exposes its own node palette, not the generic drawing toolbar. */
+.canvas .App-menu_top,
+.canvas .App-menu_left,
+.canvas .App-menu_right,
+.canvas .App-menu_bottom,
+.canvas .App-toolbar,
+.canvas .zen-mode-transition,
+.canvas .App-sidebar {
+  display: none;
+}
+
+.properties {
+  padding: 22px 18px;
+  border-left: 1px solid #e4e3ed;
+  background: #fff;
+}
+
+.properties h2 {
+  margin: 0 0 24px;
+  font-size: 17px;
+}
+
+.properties h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.properties-hint {
+  color: #716e83;
+  font-size: 13px;
+}
+
+.properties label {
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.properties select,
+.properties input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d8d6e2;
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+}
+
+.delete-node {
+  width: 100%;
+  margin-top: 24px;
+  padding: 9px;
+  border: 1px solid #d9534f;
+  border-radius: 6px;
+  background: #fff5f5;
+  color: #b42318;
+  cursor: pointer;
+}
+
+.edit-function {
+  width: 100%;
+  margin-top: 18px;
+  padding: 9px;
+  border: 1px solid #7163a6;
+  border-radius: 6px;
+  background: #f5f2ff;
+  color: #5e4e9b;
+  cursor: pointer;
+}
+
+.node-id,
+.properties p {
+  color: #716e83;
+  font-size: 13px;
+}
+
+.connection-count {
+  margin-top: 18px;
+}
+
+.function-properties {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eceaf2;
+}
+
+.parameter-fields {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  background: #f8f7fb;
+}
