@@ -1,4 +1,10 @@
-import type { PandoraFunction, PandoraNode, PandoraProgram } from "./model";
+import type {
+  PandoraConnection,
+  PandoraFunction,
+  PandoraNode,
+  PandoraNodeType,
+  PandoraProgram,
+} from "./model";
 
 type JsonScalar = string | number | boolean;
 
@@ -20,6 +26,23 @@ export type PandoraJsonProgram = {
       outputs: string[];
     }>;
   }>;
+};
+
+type JsonNode = {
+  idx?: number;
+  tipo?: string;
+  type?: string;
+  ligacoes?: Array<number | string>;
+  inputs?: JsonScalar[];
+  entradas?: JsonScalar[];
+};
+
+type JsonFunction = {
+  id?: number;
+  chamada?: string;
+  nome?: string;
+  entradas?: JsonScalar[];
+  grafo?: JsonNode[];
 };
 
 function parseValue(value: unknown): JsonScalar {
@@ -143,4 +166,138 @@ export function programToPandoraJson(program: PandoraProgram): PandoraJsonProgra
       serializeFunction(definition, index, functionsById),
     ),
   };
+}
+
+function isNodeType(value: string): value is PandoraNodeType {
+  return [
+    "lig", "const", "soma", "subs", "mult", "divs", "igual", "ngual",
+    "meno", "maio", "encp", "disor", "visor",
+  ].includes(value);
+}
+
+function importNodePosition(index: number, total: number): { x: number; y: number } {
+  const columns = Math.max(1, Math.ceil(Math.sqrt(total)));
+  return {
+    x: 120 + (index % columns) * 170,
+    y: 80 + Math.floor(index / columns) * 130,
+  };
+}
+
+export function pandoraJsonToProgram(data: unknown): PandoraProgram {
+  if (!data || typeof data !== "object") {
+    throw new Error("O arquivo Pandora deve conter um objeto JSON");
+  }
+  const raw = data as { nome?: unknown; entradas?: unknown; lista?: unknown };
+  if (!Array.isArray(raw.lista) || raw.lista.length === 0) {
+    throw new Error("O arquivo Pandora não possui funções");
+  }
+  const rawFunctions = raw.lista as JsonFunction[];
+  const names = rawFunctions.map((item, index) => {
+    const name = item.chamada ?? item.nome;
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error(`A função ${index + 1} não possui nome`);
+    }
+    return name;
+  });
+  if (new Set(names).size !== names.length) {
+    throw new Error("O arquivo Pandora possui funções com nomes duplicados");
+  }
+  const functionIds = rawFunctions.map((item, index) => `function-${item.id ?? index}`);
+  const functionIdByName = new Map(names.map((name, index) => [name, functionIds[index]]));
+
+  const functions = rawFunctions.map((definition, functionIndex) => {
+    if (!Array.isArray(definition.grafo)) {
+      throw new Error(`A função ${names[functionIndex]} não possui um grafo válido`);
+    }
+    const nodes = definition.grafo.map((rawNode, index) => {
+      const type = rawNode.tipo ?? rawNode.type;
+      if (typeof type !== "string" || !isNodeType(type)) {
+        throw new Error(`Nodo ${index} da função ${names[functionIndex]} possui tipo inválido`);
+      }
+      const position = importNodePosition(index, definition.grafo!.length);
+      const links = Array.isArray(rawNode.ligacoes) ? rawNode.ligacoes : [];
+      const functionId = type === "encp"
+        ? functionIdByName.get(links.find((link) => typeof link === "string") as string)
+        : undefined;
+      if (type === "encp" && !functionId) {
+        throw new Error(`Chamada encp inválida no nodo ${index} da função ${names[functionIndex]}`);
+      }
+      const inputValues = rawNode.inputs ?? rawNode.entradas ?? [];
+      return {
+        id: `${functionIds[functionIndex]}-node-${index}`,
+        type,
+        x: position.x,
+        y: position.y,
+        idx: rawNode.idx ?? index,
+        ...(type === "const" ? { value: inputValues[0] ?? "" } : {}),
+        ...(functionId ? {
+          functionId,
+          functionName: links.find((link) => typeof link === "string"),
+        } : {}),
+        ...(type === "lig" && index < (definition.entradas?.length ?? 0)
+          ? { functionPort: "input" as const, functionPortIndex: index }
+          : {}),
+        ...(type === "lig" && (links.includes("output") || links.includes("x"))
+          ? { functionPort: "output" as const }
+          : {}),
+      } satisfies PandoraNode;
+    });
+    const nodesByIndex = new Map(nodes.map((node, index) => [index, node]));
+    const incomingPorts = new Map<number, number>();
+    const connections: PandoraConnection[] = [];
+    definition.grafo.forEach((rawNode, fromIndex) => {
+      const fromNode = nodesByIndex.get(fromIndex);
+      if (!fromNode) return;
+      const links = Array.isArray(rawNode.ligacoes) ? rawNode.ligacoes : [];
+      links.forEach((link, linkIndex) => {
+        if (typeof link !== "number") return;
+        const toNode = nodesByIndex.get(link);
+        if (!toNode) {
+          throw new Error(`Ligação aponta para um nodo inexistente na função ${names[functionIndex]}`);
+        }
+        const toPort = incomingPorts.get(link) ?? 0;
+        incomingPorts.set(link, toPort + 1);
+        connections.push({
+          id: `${functionIds[functionIndex]}-connection-${connections.length}`,
+          fromNodeId: fromNode.id,
+          fromPort: typeOutputPort(fromNode.type, linkIndex),
+          toNodeId: toNode.id,
+          toPort,
+        });
+      });
+    });
+    const parameterCount = definition.entradas?.length ?? 0;
+    return {
+      id: functionIds[functionIndex],
+      name: names[functionIndex],
+      parameters: Array.from({ length: parameterCount }, (_, index) => ({ name: `p${index + 1}` })),
+      nodes,
+      connections,
+    };
+  });
+
+  const entryIndex = rawFunctions.length - 1;
+  const entryFunction = functions[entryIndex];
+  const functionNodes = functions.map((definition, index) => ({
+    id: `${definition.id}-program-node`,
+    type: "funcao" as const,
+    functionId: definition.id,
+    functionName: definition.name,
+    x: 100 + (index % 2) * 520,
+    y: 100 + Math.floor(index / 2) * 280,
+  }));
+  return {
+    name: typeof raw.nome === "string" && raw.nome.trim() ? raw.nome : "pandora-programa",
+    nodes: functionNodes,
+    connections: [],
+    functions,
+    entryFunctionId: entryFunction.id,
+    parameterValues: Array.isArray(raw.entradas)
+      ? raw.entradas.map((value) => String(value ?? ""))
+      : [],
+  };
+}
+
+function typeOutputPort(type: PandoraNodeType, linkIndex: number): number {
+  return type === "disor" ? linkIndex : 0;
 }

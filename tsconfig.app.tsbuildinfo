@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/model.ts","./src/scene.ts","./src/serializer.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/model.ts","./src/pandora-interpreter.d.ts","./src/scene.ts","./src/serializer.ts"],"version":"5.9.3"}

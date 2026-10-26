@@ -32,7 +32,8 @@ npm run build
 - criação de funções pelo menu **Novo → função**;
 - navegação para o quadro interno da função por duplo clique e breadcrumb;
 - edição do nome e da aridade da função;
-- seleção da função de entrada e configuração dos seus parâmetros na cena raiz;
+- seleção da função de entrada no painel de propriedades e edição dos valores
+  dos parâmetros no painel de execução;
 - exclusão de funções pelo painel de propriedades;
 - configuração de nodos `encp` com uma função definida no programa, herdando
   seu nome, aridade de entradas e uma saída;
@@ -48,12 +49,18 @@ npm run build
 - atualização da cena quando o modelo muda.
 - exportação do programa para o JSON aceito pelo interpretador, com download
   pelo botão **Exportar**;
+- importação de programas Pandora por arquivo JSON pelo botão **Importar**;
+- execução do programa atual pelo interpretador, com exibição do resultado ou
+  do erro no painel de execução inferior, no estilo de um terminal;
+- minimização independente dos painéis de propriedades e de execução;
 - configuração do nome do programa, usado no campo `nome` do JSON e no arquivo
   baixado;
+- visualização expandida e estática das funções na cena do programa, com
+  edição disponível pelo botão **Editar função**;
+- representação compacta dos nodos na cena do programa, sem portas visuais,
+  com textos preservados apenas para operações lógicas e aritméticas;
 
 Ainda não fazem parte deste incremento:
 
-- importação e exportação do JSON Pandora;
-- execução do interpretador;
 - validação semântica completa (a criação já respeita a aridade das entradas);
 - persistência e colaboração.

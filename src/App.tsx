@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import type {
   ExcalidrawImperativeAPI,
@@ -17,7 +17,11 @@ import {
   type PandoraProgram,
 } from "./model";
 import { CONNECTION_DATA_KIND, NODE_DATA_KIND, nodesToElements } from "./scene";
-import { programToPandoraJson } from "./serializer";
+import { pandoraJsonToProgram, programToPandoraJson } from "./serializer";
+import {
+  Interpretador,
+  normalizarArquivo,
+} from "@pandora-lang/interpreter";
 import "./styles.css";
 
 type EditorContext = "root" | string;
@@ -35,6 +39,11 @@ export default function App() {
   const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
   const [isNodeMenuOpen, setIsNodeMenuOpen] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [executionResult, setExecutionResult] = useState<unknown>(undefined);
+  const [executionError, setExecutionError] = useState<string | null>(null);
+  const [isPropertiesMinimized, setIsPropertiesMinimized] = useState(false);
+  const [isExecutionMinimized, setIsExecutionMinimized] = useState(true);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const isDraggingRef = useRef(false);
   const pendingPositionsRef = useRef(
     new Map<string, { x: number; y: number }>(),
@@ -55,8 +64,14 @@ export default function App() {
       ? program.functions.find((item) => item.id === selectedNode.functionId)
       : activeFunction;
   const elements = useMemo(
-    () => nodesToElements(nodes, connections, selectedNodeId, program.functions),
-    [nodes, connections, selectedNodeId, program.functions],
+    () => nodesToElements(
+      nodes,
+      connections,
+      selectedNodeId,
+      program.functions,
+      context === "root",
+    ),
+    [nodes, connections, selectedNodeId, program.functions, context],
   );
 
   useEffect(() => {
@@ -95,6 +110,7 @@ export default function App() {
       if (element.customData?.kind === NODE_DATA_KIND) {
         const nodeId = element.customData.nodeId;
         if (typeof nodeId === "string") {
+          if (element.customData.preview === true) continue;
           if (element.isDeleted) deletedNodeIds.add(nodeId);
           if (element.customData.role === "shape") {
             pendingPositionsRef.current.set(nodeId, {
@@ -170,7 +186,7 @@ export default function App() {
     setSelectedNodeId(
       typeof nodeId === "string" && !node?.derivedFrom ? nodeId : null,
     );
-    if (typeof nodeId === "string" && node?.type === "funcao") {
+    if (context !== "root" && typeof nodeId === "string" && node?.type === "funcao") {
       const now = Date.now();
       const previous = lastClickRef.current;
       if (previous?.nodeId === nodeId && now - previous.at < 350) {
@@ -476,9 +492,6 @@ export default function App() {
   }
 
   function renderProgramConfiguration() {
-    const entryFunction =
-      program.functions.find((item) => item.id === program.entryFunctionId) ??
-      program.functions[0];
     if (!entryFunction) return null;
     return (
       <>
@@ -524,33 +537,24 @@ export default function App() {
             ))}
           </select>
         </label>
-        {entryFunction.parameters.map((parameter, index) => (
-          <label key={`entry-parameter-${index}`}>
-            {parameter.name}
-            <input
-              value={program.parameterValues[index] ?? ""}
-              onChange={(event) =>
-                setProgram((current) => ({
-                  ...current,
-                  parameterValues: current.parameterValues.map((value, valueIndex) =>
-                    valueIndex === index ? event.target.value : value,
-                  ),
-                }))
-              }
-            />
-          </label>
-        ))}
-        {entryFunction.parameters.length === 0 && (
-          <p className="properties-hint">
-            A função de entrada não possui parâmetros.
-          </p>
-        )}
-        <div className="program-actions">
-          <button className="export-button" type="button" onClick={exportProgram}>
-            Exportar
-          </button>
-          {exportError && <p className="export-error">{exportError}</p>}
-        </div>
+        <button className="export-button" type="button" onClick={exportProgram}>
+          Exportar
+        </button>
+        <button
+          className="export-button"
+          type="button"
+          onClick={() => importInputRef.current?.click()}
+        >
+          Importar
+        </button>
+        <input
+          ref={importInputRef}
+          className="file-input"
+          type="file"
+          accept="application/json,.json"
+          onChange={importProgram}
+        />
+        {exportError && <p className="export-error">{exportError}</p>}
       </>
     );
   }
@@ -573,8 +577,55 @@ export default function App() {
         error instanceof Error ? error.message : "Não foi possível exportar o programa",
       );
     }
+
   }
 
+  async function importProgram(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const importedProgram = pandoraJsonToProgram(JSON.parse(await file.text()));
+      setProgram(importedProgram);
+      setContext("root");
+      setSelectedNodeId(null);
+      setExecutionResult(undefined);
+      setExecutionError(null);
+      setExportError(null);
+    } catch (error) {
+      setExportError(
+        error instanceof Error
+          ? `Não foi possível importar: ${error.message}`
+          : "Não foi possível importar o programa",
+      );
+    }
+  }
+
+  function runProgram() {
+    try {
+      const json = programToPandoraJson(program);
+      const arquivo = normalizarArquivo(json);
+      const programaExecutado = Interpretador(arquivo);
+      setExecutionResult(programaExecutado.resultado);
+      setExecutionError(null);
+      setExportError(null);
+    } catch (error) {
+      setExecutionResult(undefined);
+      setExecutionError(
+        error instanceof Error ? error.message : "Não foi possível executar o programa",
+      );
+    }
+  }
+
+  function formatExecutionValue(value: unknown): string {
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    return JSON.stringify(value);
+  }
+
+  const entryFunction =
+    program.functions.find((item) => item.id === program.entryFunctionId) ??
+    program.functions[0];
   const title = activeFunction ? activeFunction.name : "Programa";
 
   return (
@@ -654,21 +705,35 @@ export default function App() {
             }}
           />
         </div>
-        <aside className="properties">
-          <h2>Propriedades</h2>
-          {context === "root" && !selectedNode && renderProgramConfiguration()}
-          {context === "root" && selectedFunction && renderFunctionProperties()}
-          {context === "root" && selectedNode?.type === "funcao" && (
+        <aside className={`properties ${isPropertiesMinimized ? "is-minimized" : ""}`}>
+          <div className="panel-header">
+            { isPropertiesMinimized ? null : 
+              <h2>Propriedades</h2>
+            }
             <button
-              className="edit-function"
+              className="panel-toggle"
               type="button"
-              onClick={editSelectedFunction}
+              aria-label={isPropertiesMinimized ? "Restaurar propriedades" : "Minimizar propriedades"}
+              onClick={() => setIsPropertiesMinimized((minimized) => !minimized)}
             >
-              Editar função
+              {isPropertiesMinimized ? "▣" : "—"}
             </button>
-          )}
-          {selectedNode && selectedNode.type !== "funcao" ? (
+          </div>
+          {!isPropertiesMinimized && (
             <>
+              {context === "root" && !selectedNode && renderProgramConfiguration()}
+              {context === "root" && selectedFunction && renderFunctionProperties()}
+              {context === "root" && selectedNode?.type === "funcao" && (
+                <button
+                  className="edit-function"
+                  type="button"
+                  onClick={editSelectedFunction}
+                >
+                  Editar função
+                </button>
+              )}
+              {selectedNode && selectedNode.type !== "funcao" ? (
+                <>
               <p className="node-id">{selectedNode.id}</p>
               <label>
                 Tipo
@@ -845,15 +910,69 @@ export default function App() {
                 </select>
               </label>
               <p className="connection-count">{connections.length} conexão(ões)</p>
+                </>
+              ) : (
+                <p>
+                  {context === "root"
+                    ? "Selecione uma função ou abra a configuração do programa."
+                    : "Crie ou selecione um nodo para editar suas propriedades."}
+                </p>
+              )}
             </>
-          ) : (
-            <p>
-              {context === "root"
-                ? "Selecione uma função ou abra a configuração do programa."
-                : "Crie ou selecione um nodo para editar suas propriedades."}
-            </p>
           )}
         </aside>
+      </section>
+      <section className={`execution-panel ${isExecutionMinimized ? "is-minimized" : ""}`}>
+        <div className="panel-header">
+          <h2>Terminal</h2>
+          <button
+            className="panel-toggle"
+            type="button"
+            aria-label={isExecutionMinimized ? "Restaurar terminal" : "Minimizar terminal"}
+            onClick={() => setIsExecutionMinimized((minimized) => !minimized)}
+          >
+            {isExecutionMinimized ? "▣" : "—"}
+          </button>
+        </div>
+        {!isExecutionMinimized && (
+          <div className="execution-content">
+            <div className="execution-parameters">
+              <span className="execution-label">Parâmetros</span>
+              {entryFunction.parameters.length > 0 ? (
+                entryFunction.parameters.map((parameter, index) => (
+                  <label key={`entry-parameter-${index}`}>
+                    {parameter.name}
+                    <input
+                      value={program.parameterValues[index] ?? ""}
+                      onChange={(event) =>
+                        setProgram((current) => ({
+                          ...current,
+                          parameterValues: current.parameterValues.map((value, valueIndex) =>
+                            valueIndex === index ? event.target.value : value,
+                          ),
+                        }))
+                      }
+                    />
+                  </label>
+                ))
+              ) : (
+                <span className="execution-placeholder">Sem parâmetros</span>
+              )}
+            </div>
+            <button className="run-button" type="button" onClick={runProgram}>
+              Executar
+            </button>
+            {executionError && <p className="execution-error">{executionError}</p>}
+            {executionResult !== undefined && (
+              <p className="execution-result">
+                Resultado: <strong>{formatExecutionValue(executionResult)}</strong>
+              </p>
+            )}
+            {executionError === null && executionResult === undefined && (
+              <p className="execution-placeholder">A saída da execução aparecerá aqui.</p>
+            )}
+          </div>
+        )}
       </section>
     </main>
   );

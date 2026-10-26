@@ -99,9 +99,49 @@ body {
   cursor: pointer;
 }
 
+.file-input {
+  display: none;
+}
+
+.run-button {
+  padding: 7px 12px;
+  border: 1px solid #5e4e9b;
+  border-radius: 6px;
+  background: #5e4e9b;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.run-button:hover {
+  background: #493b80;
+}
+
 .export-button:hover {
   border-color: #7163a6;
   background: #f5f2ff;
+}
+
+.execution-error,
+.execution-result {
+  width: 280px;
+  padding: 8px;
+  margin: 8px 0 0;
+  border-radius: 6px;
+  font-size: 12px !important;
+}
+
+.execution-error {
+  border: 1px solid #d9534f;
+  background: #fff5f5;
+  color: #b42318 !important;
+}
+
+.execution-result {
+  border: 1px solid #8bc48b;
+  background: #f1fff1;
+  color: #236b23 !important;
 }
 
 .export-error {
@@ -117,6 +157,95 @@ body {
 
 .program-actions {
   margin-top: 22px;
+}
+
+.execution-panel {
+  flex: 0 0 150px;
+  min-height: 0;
+  padding: 12px 18px;
+  border-top: 1px solid #e4e3ed;
+  background: #fff;
+  color: #242238;
+}
+
+.execution-panel .panel-header {
+  min-height: 26px;
+}
+
+.execution-panel .panel-header h2 {
+  margin: 0;
+  color: #242238;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.execution-panel .panel-toggle {
+  border-color: #d8d6e2;
+  background: #fff;
+  color: #716e83;
+}
+
+.execution-panel .panel-toggle:hover {
+  border-color: #7163a6;
+  color: #5e4e9b;
+}
+
+.execution-panel.is-minimized {
+  flex-basis: 50px;
+}
+
+.execution-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  height: calc(100% - 34px);
+  padding-top: 8px;
+  overflow: auto;
+}
+
+.execution-parameters {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.execution-label {
+  padding-top: 8px;
+  color: #716e83;
+  font-size: 12px;
+}
+
+.execution-parameters label {
+  display: grid;
+  gap: 4px;
+  color: #716e83;
+  font-size: 12px;
+}
+
+.execution-parameters input {
+  width: 90px;
+  padding: 7px;
+  border: 1px solid #d8d6e2;
+  border-radius: 6px;
+  background: #fff;
+  color: #242238;
+  font: inherit;
+}
+
+.execution-content .run-button {
+  margin-top: 18px;
+}
+
+.execution-content .execution-error,
+.execution-content .execution-result,
+.execution-placeholder {
+  width: auto;
+  margin: 0;
+}
+
+.execution-placeholder {
+  color: #aaa6bb;
+  font-size: 12px;
 }
 
 .new-node-button:hover,
@@ -197,6 +326,10 @@ body {
   grid-template-columns: minmax(0, 1fr) 260px;
 }
 
+.editor-layout:has(.properties.is-minimized) {
+  grid-template-columns: minmax(0, 1fr) 46px;
+}
+
 .canvas {
   min-width: 0;
   min-height: 0;
@@ -214,14 +347,51 @@ body {
 }
 
 .properties {
+  min-height: 0;
+  overflow: auto;
   padding: 22px 18px;
   border-left: 1px solid #e4e3ed;
   background: #fff;
 }
 
-.properties h2 {
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-header h2 {
   margin: 0 0 24px;
   font-size: 17px;
+}
+
+.panel-toggle {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #d8d6e2;
+  border-radius: 5px;
+  background: #fff;
+  color: #716e83;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.panel-toggle:hover {
+  border-color: #7163a6;
+  color: #5e4e9b;
+}
+
+.properties.is-minimized {
+  overflow: hidden;
+  padding: 14px 10px;
+}
+
+.properties.is-minimized .panel-header h2,
+.execution-panel.is-minimized .panel-header h2 {
+  margin: 0;
 }
 
 .properties h3 {
