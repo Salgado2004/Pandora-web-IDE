@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/model.ts","./src/pandora-interpreter.d.ts","./src/scene.ts","./src/serializer.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/model.ts","./src/pandora-interpreter.d.ts","./src/scene.ts","./src/serializer.ts","./src/components/editorcanvas.tsx","./src/components/editorheader.tsx","./src/components/executionpanel.tsx","./src/components/propertiespanel.tsx","./src/scene/connections.ts","./src/scene/layout.ts","./src/scene/metadata.ts"],"version":"5.9.3"}

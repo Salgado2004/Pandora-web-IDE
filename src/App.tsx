@@ -1,15 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
-import type {
-  ExcalidrawImperativeAPI,
-  ExcalidrawProps,
-} from "@excalidraw/excalidraw/types";
+import type { ExcalidrawImperativeAPI, ExcalidrawProps } from "@excalidraw/excalidraw/types";
 import "@excalidraw/excalidraw/index.css";
 import {
-  editableNodeTypes,
   initialProgram,
   inputPortCount,
-  nodeVisuals,
   type PandoraConnection,
   type PandoraFunction,
   type PandoraNode,
@@ -22,6 +16,10 @@ import {
   Interpretador,
   normalizarArquivo,
 } from "@pandora-lang/interpreter";
+import { EditorCanvas } from "./components/EditorCanvas";
+import { EditorHeader } from "./components/EditorHeader";
+import { ExecutionPanel } from "./components/ExecutionPanel";
+import { PropertiesPanel } from "./components/PropertiesPanel";
 import "./styles.css";
 
 type EditorContext = "root" | string;
@@ -453,112 +451,6 @@ export default function App() {
     setSelectedNodeId(null);
   }
 
-  function renderFunctionProperties() {
-    if (!selectedFunction) return null;
-    return (
-      <div className="function-properties">
-        <p className="node-id">{selectedFunction.id}</p>
-        <label>
-          Nome
-          <input
-            value={selectedFunction.name}
-            onChange={(event) =>
-              updateFunction((item) => ({ ...item, name: event.target.value }))
-            }
-          />
-        </label>
-        <label>
-          Aridade
-          <input
-            type="number"
-            min="0"
-            value={selectedFunction.parameters.length}
-            onChange={(event) => {
-              const arity = Math.max(0, Number(event.target.value) || 0);
-              updateFunction((item) => ({
-                ...item,
-                parameters: Array.from({ length: arity }, (_, index) =>
-                  item.parameters[index] ?? { name: `p${index + 1}` },
-                ),
-              }));
-            }}
-          />
-        </label>
-        <button className="delete-node" type="button" onClick={deleteSelectedFunction}>
-          Excluir função
-        </button>
-      </div>
-    );
-  }
-
-  function renderProgramConfiguration() {
-    if (!entryFunction) return null;
-    return (
-      <>
-        <h3>Configuração do programa</h3>
-        <p className="properties-hint">
-          Escolha a função de entrada e informe seus parâmetros.
-        </p>
-        <label>
-          Nome do programa
-          <input
-            value={program.name}
-            onChange={(event) =>
-              setProgram((current) => ({
-                ...current,
-                name: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label>
-          Função de entrada
-          <select
-            value={entryFunction.id}
-            onChange={(event) => {
-              const nextEntryId = event.target.value;
-              const nextEntry = program.functions.find(
-                (item) => item.id === nextEntryId,
-              );
-              if (!nextEntry) return;
-              setProgram((current) => ({
-                ...current,
-                entryFunctionId: nextEntry.id,
-                parameterValues: nextEntry.parameters.map(
-                  (_, index) => current.parameterValues[index] ?? "",
-                ),
-              }));
-            }}
-          >
-            {program.functions.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="export-button" type="button" onClick={exportProgram}>
-          Exportar
-        </button>
-        <button
-          className="export-button"
-          type="button"
-          onClick={() => importInputRef.current?.click()}
-        >
-          Importar
-        </button>
-        <input
-          ref={importInputRef}
-          className="file-input"
-          type="file"
-          accept="application/json,.json"
-          onChange={importProgram}
-        />
-        {exportError && <p className="export-error">{exportError}</p>}
-      </>
-    );
-  }
-
   function exportProgram() {
     try {
       const json = programToPandoraJson(program);
@@ -626,354 +518,66 @@ export default function App() {
   const entryFunction =
     program.functions.find((item) => item.id === program.entryFunctionId) ??
     program.functions[0];
-  const title = activeFunction ? activeFunction.name : "Programa";
-
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <strong>Pandora IDE</strong>
-        <nav className="breadcrumb" aria-label="Navegação">
-          <button
-            type="button"
-            className={activeFunction ? "breadcrumb-link" : "breadcrumb-current"}
-            onClick={() => {
-              setContext("root");
-              setSelectedNodeId(null);
-            }}
-          >
-            Programa
-          </button>
-          {activeFunction && (
-            <>
-              <span>/</span>
-              <span className="breadcrumb-current">{activeFunction.name}</span>
-            </>
-          )}
-        </nav>
-        <span className="editor-title">{title}</span>
-        <div className="node-menu">
-          <button
-            className="new-node-button"
-            type="button"
-            aria-expanded={isNodeMenuOpen}
-            onClick={() => setIsNodeMenuOpen((open) => !open)}
-          >
-            <span aria-hidden="true">＋</span>
-            Novo
-          </button>
-          {isNodeMenuOpen && (
-            <div className="node-menu-popover" role="menu">
-              <strong>Novo</strong>
-              {context === "root" && (
-                <button type="button" role="menuitem" onClick={addFunction}>
-                  <span className="node-menu-icon function-icon">ƒ</span>
-                  <span>função</span>
-                </button>
-              )}
-              {context !== "root" && editableNodeTypes.map((type) => (
-                <button key={type} type="button" role="menuitem" onClick={() => addNode(type)}>
-                  <span className="node-menu-icon" style={{ backgroundColor: nodeVisuals[type].color }}>
-                    {nodeVisuals[type].label}
-                  </span>
-                  <span>{type}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
+      <EditorHeader
+        activeFunctionName={activeFunction?.name}
+        context={context}
+        isNodeMenuOpen={isNodeMenuOpen}
+        onGoToRoot={() => {
+          setContext("root");
+          setSelectedNodeId(null);
+        }}
+        onToggleMenu={() => setIsNodeMenuOpen((open) => !open)}
+        onAddFunction={addFunction}
+        onAddNode={addNode}
+      />
       <section className="editor-layout">
-        <div className="canvas">
-          <Excalidraw
-            key={context}
-            initialData={{ elements }}
-            excalidrawAPI={setApi}
-            onChange={handleChange}
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            UIOptions={{
-              canvasActions: {
-                changeViewBackgroundColor: false,
-                clearCanvas: false,
-                export: false,
-                loadScene: false,
-                saveToActiveFile: false,
-                toggleTheme: false,
-                saveAsImage: false,
-              },
-              tools: { image: false },
-            }}
-          />
-        </div>
-        <aside className={`properties ${isPropertiesMinimized ? "is-minimized" : ""}`}>
-          <div className="panel-header">
-            { isPropertiesMinimized ? null : 
-              <h2>Propriedades</h2>
-            }
-            <button
-              className="panel-toggle"
-              type="button"
-              aria-label={isPropertiesMinimized ? "Restaurar propriedades" : "Minimizar propriedades"}
-              onClick={() => setIsPropertiesMinimized((minimized) => !minimized)}
-            >
-              {isPropertiesMinimized ? "▣" : "—"}
-            </button>
-          </div>
-          {!isPropertiesMinimized && (
-            <>
-              {context === "root" && !selectedNode && renderProgramConfiguration()}
-              {context === "root" && selectedFunction && renderFunctionProperties()}
-              {context === "root" && selectedNode?.type === "funcao" && (
-                <button
-                  className="edit-function"
-                  type="button"
-                  onClick={editSelectedFunction}
-                >
-                  Editar função
-                </button>
-              )}
-              {selectedNode && selectedNode.type !== "funcao" ? (
-                <>
-              <p className="node-id">{selectedNode.id}</p>
-              <label>
-                Tipo
-                <select
-                  value={selectedNode.type}
-                  onChange={(event) =>
-                    updateContext((currentNodes, currentConnections) => ({
-                      nodes: currentNodes.map((node) =>
-                        node.id === selectedNodeId
-                          ? { ...node, type: event.target.value as PandoraNode["type"] }
-                          : node,
-                      ),
-                      connections: currentConnections,
-                    }))
-                  }
-                >
-                  {editableNodeTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type} — {nodeVisuals[type].label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {selectedNode.type === "encp" && (
-                <label>
-                  Função chamada
-                  <select
-                    value={selectedNode.functionId ?? ""}
-                    onChange={(event) => {
-                      const functionId = event.target.value;
-                      const calledFunction = program.functions.find(
-                        (item) => item.id === functionId,
-                      );
-                      if (!calledFunction) return;
-                      const arity = calledFunction.parameters.length;
-                      updateContext((currentNodes, currentConnections) => ({
-                        nodes: currentNodes.map((node) =>
-                          node.id === selectedNode.id
-                            ? {
-                                ...node,
-                                functionId,
-                                functionName: calledFunction.name,
-                              }
-                            : node,
-                        ),
-                        connections: currentConnections.filter(
-                          (connection) =>
-                            connection.toNodeId !== selectedNode.id ||
-                            connection.toPort < arity,
-                        ),
-                      }));
-                    }}
-                  >
-                    <option value="">Escolha uma função</option>
-                    {program.functions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {selectedNode.type === "lig" && context !== "root" && (
-                <>
-                  <label>
-                    Conector da função
-                    <select
-                      value={selectedNode.functionPort ?? ""}
-                      onChange={(event) => {
-                        const functionPort = event.target.value as
-                          | ""
-                          | "input"
-                          | "output";
-                        updateContext((currentNodes, currentConnections) => ({
-                          nodes: currentNodes.map((node) =>
-                            node.id === selectedNode.id
-                              ? {
-                                  ...node,
-                                  functionPort: functionPort || undefined,
-                                  functionPortIndex:
-                                    functionPort === "input"
-                                      ? Math.min(
-                                          node.functionPortIndex ?? 0,
-                                          Math.max(
-                                            0,
-                                            (activeFunction?.parameters.length ?? 1) - 1,
-                                          ),
-                                        )
-                                      : undefined,
-                                }
-                              : node,
-                          ),
-                          connections: currentConnections.filter((connection) => {
-                            if (connection.fromNodeId === selectedNode.id) {
-                              return functionPort !== "output";
-                            }
-                            if (connection.toNodeId === selectedNode.id) {
-                              return functionPort !== "input";
-                            }
-                            return true;
-                          }),
-                        }));
-                      }}
-                    >
-                      <option value="">ligação interna</option>
-                      <option value="input">input</option>
-                      <option value="output">output</option>
-                    </select>
-                  </label>
-                  {selectedNode.functionPort === "input" && (
-                    <label>
-                      Índice do input
-                      <select
-                        value={String(selectedNode.functionPortIndex ?? 0)}
-                        onChange={(event) => {
-                          const functionPortIndex = Number(event.target.value);
-                          updateContext((currentNodes, currentConnections) => ({
-                            nodes: currentNodes.map((node) =>
-                              node.id === selectedNode.id
-                                ? { ...node, functionPortIndex }
-                                : node,
-                            ),
-                            connections: currentConnections,
-                          }));
-                        }}
-                      >
-                        {Array.from(
-                          { length: activeFunction?.parameters.length ?? 0 },
-                          (_, index) => (
-                            <option key={index} value={index}>
-                              input {index}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    </label>
-                  )}
-                </>
-              )}
-              {selectedNode.type === "const" && (
-                <label>
-                  Valor
-                  <input
-                    value={String(selectedNode.value ?? "")}
-                    onChange={(event) =>
-                      updateContext((currentNodes, currentConnections) => ({
-                        nodes: currentNodes.map((node) =>
-                          node.id === selectedNodeId
-                            ? { ...node, value: event.target.value }
-                            : node,
-                        ),
-                        connections: currentConnections,
-                      }))
-                    }
-                  />
-                </label>
-              )}
-              <button className="delete-node" type="button" onClick={deleteSelectedNode}>
-                Excluir nodo
-              </button>
-              <label>
-                Conectar a
-                <select defaultValue="" onChange={(event) => addConnection(event.target.value)}>
-                  <option value="">Escolha uma porta</option>
-                  {nodes
-                    .filter((node) => node.id !== selectedNode.id)
-                    .flatMap((node) =>
-                      Array.from({ length: getInputPortCount(node) }, (_, port) => (
-                        <option key={`${node.id}:${port}`} value={`${node.id}:${port}`}>
-                          {node.id} · entrada {port}
-                        </option>
-                      )),
-                    )}
-                </select>
-              </label>
-              <p className="connection-count">{connections.length} conexão(ões)</p>
-                </>
-              ) : (
-                <p>
-                  {context === "root"
-                    ? "Selecione uma função ou abra a configuração do programa."
-                    : "Crie ou selecione um nodo para editar suas propriedades."}
-                </p>
-              )}
-            </>
-          )}
-        </aside>
+        <EditorCanvas
+          context={context}
+          elements={elements}
+          onApi={setApi}
+          onChange={handleChange}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+        />
+
+        <PropertiesPanel
+          context={context}
+          program={program}
+          setProgram={setProgram}
+          activeFunction={activeFunction}
+          selectedNode={selectedNode}
+          selectedFunction={selectedFunction}
+          selectedNodeId={selectedNodeId}
+          nodes={nodes}
+          connections={connections}
+          isMinimized={isPropertiesMinimized}
+          onToggle={() => setIsPropertiesMinimized((minimized) => !minimized)}
+          updateContext={updateContext}
+          updateFunction={updateFunction}
+          onEditFunction={editSelectedFunction}
+          onDeleteNode={deleteSelectedNode}
+          onDeleteFunction={deleteSelectedFunction}
+          getInputPortCount={getInputPortCount}
+          addConnection={addConnection}
+          importInputRef={importInputRef}
+          exportError={exportError}
+          onExport={exportProgram}
+          onImport={importProgram}
+        />
       </section>
-      <section className={`execution-panel ${isExecutionMinimized ? "is-minimized" : ""}`}>
-        <div className="panel-header">
-          <h2>Terminal</h2>
-          <button
-            className="panel-toggle"
-            type="button"
-            aria-label={isExecutionMinimized ? "Restaurar terminal" : "Minimizar terminal"}
-            onClick={() => setIsExecutionMinimized((minimized) => !minimized)}
-          >
-            {isExecutionMinimized ? "▣" : "—"}
-          </button>
-        </div>
-        {!isExecutionMinimized && (
-          <div className="execution-content">
-            <div className="execution-parameters">
-              <span className="execution-label">Parâmetros</span>
-              {entryFunction.parameters.length > 0 ? (
-                entryFunction.parameters.map((parameter, index) => (
-                  <label key={`entry-parameter-${index}`}>
-                    {parameter.name}
-                    <input
-                      value={program.parameterValues[index] ?? ""}
-                      onChange={(event) =>
-                        setProgram((current) => ({
-                          ...current,
-                          parameterValues: current.parameterValues.map((value, valueIndex) =>
-                            valueIndex === index ? event.target.value : value,
-                          ),
-                        }))
-                      }
-                    />
-                  </label>
-                ))
-              ) : (
-                <span className="execution-placeholder">Sem parâmetros</span>
-              )}
-            </div>
-            <button className="run-button" type="button" onClick={runProgram}>
-              Executar
-            </button>
-            {executionError && <p className="execution-error">{executionError}</p>}
-            {executionResult !== undefined && (
-              <p className="execution-result">
-                Resultado: <strong>{formatExecutionValue(executionResult)}</strong>
-              </p>
-            )}
-            {executionError === null && executionResult === undefined && (
-              <p className="execution-placeholder">A saída da execução aparecerá aqui.</p>
-            )}
-          </div>
-        )}
-      </section>
+      <ExecutionPanel
+        entryFunction={entryFunction}
+        program={program}
+        setProgram={setProgram}
+        isMinimized={isExecutionMinimized}
+        onToggle={() => setIsExecutionMinimized((minimized) => !minimized)}
+        onRun={runProgram}
+        executionResult={executionResult}
+        executionError={executionError}
+        formatValue={formatExecutionValue}
+      />
     </main>
   );
 }

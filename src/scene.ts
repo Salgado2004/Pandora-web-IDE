@@ -1,65 +1,25 @@
 import { convertToExcalidrawElements } from "@excalidraw/excalidraw";
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
 import type { PandoraConnection, PandoraFunction, PandoraNode } from "./model";
-import { inputPortCount, nodeVisuals, outputPortCount } from "./model";
-
-export const NODE_DATA_KIND = "pandora-node";
-export const CONNECTION_DATA_KIND = "pandora-connection";
-const NODE_WIDTH = 78;
-const NODE_HEIGHT = 68;
-const PORT_SIZE = 10;
-const FUNCTION_PREVIEW_WIDTH = 430;
-const FUNCTION_PREVIEW_HEIGHT = 190;
-const FUNCTION_PREVIEW_SCALE = 0.45;
-const FUNCTION_PREVIEW_NODE_WIDTH = NODE_WIDTH * FUNCTION_PREVIEW_SCALE;
-const FUNCTION_PREVIEW_NODE_HEIGHT = NODE_HEIGHT * FUNCTION_PREVIEW_SCALE;
-const operationTypes = new Set([
-    "soma",
-    "subs",
-    "mult",
-    "divs",
-    "igual",
-    "ngual",
-    "meno",
-    "maio",
-  ]);
-
-function portY(index: number, count: number, y: number): number {
-  return y + ((index + 1) * NODE_HEIGHT) / (count + 1) - PORT_SIZE / 2;
-}
-
-function nodeOutputPortCount(node: PandoraNode): number {
-  if (node.type === "lig" && node.functionPort === "output") return 0;
-  return outputPortCount(node.type);
-}
-
-export function portCenter(
-  node: PandoraNode,
-  direction: "input" | "output",
-  index: number,
-  functions: PandoraFunction[] = [],
-): { x: number; y: number } {
-  const count =
-    direction === "input"
-      ? nodeInputPortCount(node, functions)
-      : nodeOutputPortCount(node);
-  return {
-    x: node.x + (direction === "input" ? 0 : NODE_WIDTH),
-    y: portY(index, count, node.y) + PORT_SIZE / 2,
-  };
-}
-
-function nodeInputPortCount(node: PandoraNode, functions: PandoraFunction[]): number {
-  if (node.type === "lig" && node.functionPort === "input") return 0;
-  if (node.type === "lig" && node.functionPort === "output") return 1;
-  if (node.type !== "encp") return inputPortCount(node.type);
-  return inputPortCount(
-    node.type,
-    node.functionId
-      ? functions.find((item) => item.id === node.functionId)?.parameters.length ?? 0
-      : 0,
-  );
-}
+import { nodeVisuals, outputPortCount } from "./model";
+import { connectionsToElements } from "./scene/connections";
+export { CONNECTION_DATA_KIND, NODE_DATA_KIND } from "./scene/metadata";
+import { NODE_DATA_KIND, CONNECTION_DATA_KIND } from "./scene/metadata";
+import {
+  FUNCTION_PREVIEW_HEIGHT,
+  FUNCTION_PREVIEW_NODE_HEIGHT,
+  FUNCTION_PREVIEW_NODE_WIDTH,
+  FUNCTION_PREVIEW_SCALE,
+  FUNCTION_PREVIEW_WIDTH,
+  NODE_HEIGHT,
+  NODE_WIDTH,
+  PORT_SIZE,
+  nodeInputPortCount,
+  nodeOutputPortCount,
+  operationTypes,
+  portCenter,
+  portY,
+} from "./scene/layout";
 
 export function nodeToElements(
   node: PandoraNode,
@@ -361,37 +321,6 @@ export function nodeToElements(
       locked: Boolean(node.derivedFrom),
     },
   ];
-}
-
-export function connectionsToElements(
-  nodes: PandoraNode[],
-  connections: PandoraConnection[],
-  functions: PandoraFunction[] = [],
-): ExcalidrawElementSkeleton[] {
-  const byId = new Map(nodes.map((node) => [node.id, node]));
-  return connections.flatMap((connection) => {
-    const from = byId.get(connection.fromNodeId);
-    const to = byId.get(connection.toNodeId);
-    if (!from || !to) return [];
-    const start = portCenter(from, "output", connection.fromPort, functions);
-    const end = portCenter(to, "input", connection.toPort, functions);
-    return [{
-      type: "arrow",
-      x: start.x,
-      y: start.y,
-      points: [
-        [0, 0],
-        [end.x - start.x, end.y - start.y],
-      ],
-      endArrowhead: "triangle",
-      strokeColor: "#77738a",
-      strokeWidth: 2,
-      customData: {
-        kind: CONNECTION_DATA_KIND,
-        connectionId: connection.id,
-      },
-    }];
-  });
 }
 
 function expandedFunctionToElements(
