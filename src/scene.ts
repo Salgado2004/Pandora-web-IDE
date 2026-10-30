@@ -67,7 +67,7 @@ export function nodeToElements(
       derivedFrom: node.derivedFrom,
     },
     groupIds: [node.id],
-    locked: Boolean(node.derivedFrom),
+    locked: Boolean(node.derivedFrom) && node.type !== "visor",
   } satisfies ExcalidrawElementSkeleton;
   const inputPorts = Array.from({ length: inputCount }, (_, index) => ({
     type: "ellipse",
@@ -85,7 +85,7 @@ export function nodeToElements(
       port: index,
     },
     groupIds: [node.id],
-    locked: Boolean(node.derivedFrom) || node.type === "funcao",
+    locked: (Boolean(node.derivedFrom) && node.type !== "visor") || node.type === "funcao",
   } satisfies ExcalidrawElementSkeleton));
   const outputCount = nodeOutputPortCount(node);
   const outputPorts = Array.from({ length: outputCount }, (_, index) => ({
@@ -104,7 +104,7 @@ export function nodeToElements(
       port: index,
     },
     groupIds: [node.id],
-    locked: Boolean(node.derivedFrom),
+    locked: Boolean(node.derivedFrom) && node.type !== "visor",
   } satisfies ExcalidrawElementSkeleton));
   const portLabels = [
     ...Array.from({ length: inputCount }, (_, index) => ({
@@ -140,7 +140,7 @@ export function nodeToElements(
       port: index,
     },
     groupIds: [node.id],
-    locked: Boolean(node.derivedFrom),
+    locked: Boolean(node.derivedFrom) && node.type !== "visor",
   } satisfies ExcalidrawElementSkeleton));
   if (node.type === "lig" && !node.functionPort && selectedNodeId !== node.id) {
     return [shape, ...inputPorts, ...outputPorts, ...portLabels];
@@ -318,7 +318,7 @@ export function nodeToElements(
         derivedFrom: node.derivedFrom,
       },
       groupIds: [node.id],
-      locked: Boolean(node.derivedFrom),
+      locked: Boolean(node.derivedFrom) && node.type !== "visor",
     },
   ];
 }

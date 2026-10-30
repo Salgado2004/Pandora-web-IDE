@@ -34,7 +34,7 @@ type PropertiesPanelProps = {
   onDeleteNode: () => void;
   onDeleteFunction: () => void;
   getInputPortCount: (node: PandoraNode) => number;
-  addConnection: (targetValue: string) => void;
+  addConnection: (targetValue: string, sourcePort?: number) => void;
   importInputRef: RefObject<HTMLInputElement | null>;
   exportError: string | null;
   onExport: () => void;
@@ -68,7 +68,11 @@ export function PropertiesPanel({
   const entryFunction =
     program.functions.find((item) => item.id === program.entryFunctionId) ??
     program.functions[0];
-
+  const branchTarget = (port: number) =>
+    connections.find(
+      (connection) =>
+        connection.fromNodeId === selectedNode?.id && connection.fromPort === port,
+    )?.toNodeId ?? "";
   return (
     <aside className={`properties ${isMinimized ? "is-minimized" : ""}`}>
       <div className="panel-header">
@@ -338,10 +342,50 @@ export function PropertiesPanel({
               <button className="delete-node" type="button" onClick={onDeleteNode}>
                 Excluir nodo
               </button>
+              {selectedNode.type === "disor" && (
+                <>
+                  <label>
+                    Ramo caso true
+                    <select
+                      value={branchTarget(0)}
+                      onChange={(event) => addConnection(event.target.value, 0)}
+                    >
+                      <option value="">Escolha o nodo do ramo true</option>
+                      {nodes
+                        .filter((node) => node.id !== selectedNode.id)
+                        .map((node) => (
+                          <option key={node.id} value={node.id}>
+                            {node.id}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <label>
+                    Ramo caso false
+                    <select
+                      value={branchTarget(1)}
+                      onChange={(event) => addConnection(event.target.value, 1)}
+                    >
+                      <option value="">Escolha o nodo do ramo false</option>
+                      {nodes
+                        .filter((node) => node.id !== selectedNode.id)
+                        .map((node) => (
+                          <option key={node.id} value={node.id}>
+                            {node.id}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                </>
+              )}
               <label>
-                Conectar a
+                {selectedNode.type === "disor" ? "Conectar entrada" : "Conectar a"}
                 <select defaultValue="" onChange={(event) => addConnection(event.target.value)}>
-                  <option value="">Escolha uma porta</option>
+                  <option value="">
+                    {selectedNode.type === "disor"
+                      ? "Escolha uma porta"
+                      : "Escolha uma porta"}
+                  </option>
                   {nodes
                     .filter((node) => node.id !== selectedNode.id)
                     .flatMap((node) =>

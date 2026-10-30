@@ -182,7 +182,9 @@ export default function App() {
     const nodeId = element?.customData?.nodeId;
     const node = nodes.find((item) => item.id === nodeId);
     setSelectedNodeId(
-      typeof nodeId === "string" && !node?.derivedFrom ? nodeId : null,
+      typeof nodeId === "string" && (!node?.derivedFrom || node.type === "visor")
+        ? nodeId
+        : null,
     );
     if (context !== "root" && typeof nodeId === "string" && node?.type === "funcao") {
       const now = Date.now();
@@ -345,37 +347,49 @@ export default function App() {
   }
 
   function getOutputPortCount(node: PandoraNode) {
+    if (node.type === "disor") return 2;
     return node.type === "lig" && node.functionPort === "output" ? 0 : 1;
   }
 
-  function addConnection(targetValue: string) {
+  function addConnection(targetValue: string, sourcePort = 0) {
     if (!selectedNodeId || !targetValue) return;
+    const isBranchConnection = selectedNode?.type === "disor";
     const separatorIndex = targetValue.lastIndexOf(":");
-    const toNodeId = targetValue.slice(0, separatorIndex);
-    const toPort = Number(targetValue.slice(separatorIndex + 1));
+    const toNodeId = isBranchConnection
+      ? targetValue
+      : targetValue.slice(0, separatorIndex);
+    const toPort = isBranchConnection
+      ? 0
+      : Number(targetValue.slice(separatorIndex + 1));
     const destination = nodes.find((node) => node.id === toNodeId);
     if (
       !selectedNode ||
       getOutputPortCount(selectedNode) === 0 ||
       !destination ||
-      !Number.isInteger(toPort) ||
-      toPort < 0 ||
-      toPort >= getInputPortCount(destination) ||
-      connections.some(
-        (connection) =>
-          connection.toNodeId === toNodeId && connection.toPort === toPort,
-      )
+      (!isBranchConnection &&
+        (!Number.isInteger(toPort) ||
+          toPort < 0 ||
+          toPort >= getInputPortCount(destination) ||
+          connections.some(
+            (connection) =>
+              connection.toNodeId === toNodeId && connection.toPort === toPort,
+          )))
     ) {
       return;
     }
     updateContext((currentNodes, currentConnections) => ({
       nodes: currentNodes,
       connections: [
-        ...currentConnections,
+        ...currentConnections.filter(
+          (connection) =>
+            !isBranchConnection ||
+            connection.fromNodeId !== selectedNodeId ||
+            connection.fromPort !== sourcePort,
+        ),
         {
           id: `${selectedNodeId}-to-${toNodeId}-${Date.now()}`,
           fromNodeId: selectedNodeId,
-          fromPort: 0,
+          fromPort: sourcePort,
           toNodeId,
           toPort,
         },
