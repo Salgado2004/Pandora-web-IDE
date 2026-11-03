@@ -1,14 +1,15 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI, ExcalidrawProps } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 type EditorCanvasProps = {
   context: string;
   elements: ExcalidrawElement[];
   onApi: (api: ExcalidrawImperativeAPI) => void;
   onChange: NonNullable<ExcalidrawProps["onChange"]>;
-  onPointerDown: () => void;
-  onPointerUp: () => void;
+  onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
 };
 
 export function EditorCanvas({
@@ -20,14 +21,16 @@ export function EditorCanvas({
   onPointerUp,
 }: EditorCanvasProps) {
   return (
-    <div className="canvas">
+    <div
+      className="canvas"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
       <Excalidraw
         key={context}
         initialData={{ elements }}
         excalidrawAPI={onApi}
         onChange={onChange}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
         UIOptions={{
           canvasActions: {
             changeViewBackgroundColor: false,

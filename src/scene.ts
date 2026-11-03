@@ -220,7 +220,7 @@ export function nodeToElements(
     const title = {
       type: "rectangle",
       id: `${node.id}-preview-title`,
-      x: node.x + 10,
+      x: node.x - 73,
       y: node.y + 15,
       width: 68,
       height: FUNCTION_PREVIEW_HEIGHT - 30,
@@ -234,7 +234,7 @@ export function nodeToElements(
     const titleText = {
       type: "text",
       id: `${node.id}-preview-label`,
-      x: node.x + 10,
+      x: node.x - 73,
       y: node.y + FUNCTION_PREVIEW_HEIGHT / 2 - 12,
       text: definition.name,
       fontSize: 16,

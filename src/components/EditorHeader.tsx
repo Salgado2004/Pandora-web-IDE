@@ -1,5 +1,6 @@
+import { useState } from "react";
 import type { PandoraNodeType } from "../model";
-import { editableNodeTypes, nodeVisuals } from "../model";
+import { nodeVisuals } from "../model";
 
 type EditorHeaderProps = {
   activeFunctionName?: string;
@@ -21,6 +22,28 @@ export function EditorHeader({
   onAddNode,
 }: EditorHeaderProps) {
   const title = activeFunctionName ?? "Programa";
+  const nodeSections: Array<{ title: string; types: PandoraNodeType[] }> = [
+    { title: "Fluxo", types: ["lig", "const"] },
+    { title: "Operadores aritméticos", types: ["soma", "subs", "mult", "divs"] },
+    { title: "Operadores lógicos", types: ["igual", "ngual", "meno", "maio"] },
+    { title: "Funções", types: ["encp"] },
+    { title: "Condicional", types: ["disor"] },
+  ];
+  const [collapsedSections, setCollapsedSections] = useState(
+    () => new Set(nodeSections.map((section) => section.title)),
+  );
+
+  function toggleSection(title: string) {
+    setCollapsedSections((current) => {
+      const next = new Set(current);
+      if (next.has(title)) {
+        next.delete(title);
+      } else {
+        next.add(title);
+      }
+      return next;
+    });
+  }
 
   return (
     <header className="app-header">
@@ -61,14 +84,38 @@ export function EditorHeader({
               </button>
             )}
             {context !== "root" &&
-              editableNodeTypes.map((type) => (
-                <button key={type} type="button" role="menuitem" onClick={() => onAddNode(type)}>
-                  <span className="node-menu-icon" style={{ backgroundColor: nodeVisuals[type].color }}>
-                    {nodeVisuals[type].label}
+              nodeSections.map((section) => (
+                <section className="node-menu-section" key={section.title}>
+                <button
+                  className="node-menu-section-toggle"
+                  type="button"
+                  aria-expanded={!collapsedSections.has(section.title)}
+                  onClick={() => toggleSection(section.title)}
+                >
+                  <strong>{section.title}</strong>
+                  <span aria-hidden="true">
+                    {collapsedSections.has(section.title) ? "▸" : "▾"}
                   </span>
-                  <span>{type}</span>
                 </button>
-              ))}
+                {!collapsedSections.has(section.title) &&
+                  section.types.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => onAddNode(type)}
+                    >
+                      <span
+                        className="node-menu-icon"
+                        style={{ backgroundColor: nodeVisuals[type].color }}
+                      >
+                        {nodeVisuals[type].label}
+                      </span>
+                      <span>{type}</span>
+                    </button>
+                  ))}
+              </section>
+            ))}
           </div>
         )}
       </div>

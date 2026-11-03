@@ -21,6 +21,12 @@ export type PandoraJsonProgram = {
     grafo: Array<{
       idx: number;
       tipo: PandoraNode["type"];
+      meta: {
+        position: {
+          x: number;
+          y: number;
+        };
+      };
       ligacoes: Array<number | string>;
       inputs: JsonScalar[];
       outputs: string[];
@@ -32,6 +38,12 @@ type JsonNode = {
   idx?: number;
   tipo?: string;
   type?: string;
+  meta?: {
+    position?: {
+      x?: unknown;
+      y?: unknown;
+    };
+  };
   ligacoes?: Array<number | string>;
   inputs?: JsonScalar[];
   entradas?: JsonScalar[];
@@ -136,6 +148,12 @@ function serializeFunction(
     return {
       idx: index,
       tipo: node.type,
+      meta: {
+        position: {
+          x: node.x,
+          y: node.y,
+        },
+      },
       ligacoes: links,
       inputs: node.type === "const" ? [parseValue(node.value)] : Array.from({ length: inputCount }, () => ""),
       outputs: [""],
@@ -183,6 +201,23 @@ function importNodePosition(index: number, total: number): { x: number; y: numbe
   };
 }
 
+function readNodePosition(
+  rawNode: JsonNode,
+  index: number,
+  total: number,
+): { x: number; y: number } {
+  const position = rawNode.meta?.position;
+  if (
+    typeof position?.x === "number" &&
+    Number.isFinite(position.x) &&
+    typeof position.y === "number" &&
+    Number.isFinite(position.y)
+  ) {
+    return { x: position.x, y: position.y };
+  }
+  return importNodePosition(index, total);
+}
+
 export function pandoraJsonToProgram(data: unknown): PandoraProgram {
   if (!data || typeof data !== "object") {
     throw new Error("O arquivo Pandora deve conter um objeto JSON");
@@ -214,7 +249,7 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
       if (typeof type !== "string" || !isNodeType(type)) {
         throw new Error(`Nodo ${index} da função ${names[functionIndex]} possui tipo inválido`);
       }
-      const position = importNodePosition(index, definition.grafo!.length);
+      const position = readNodePosition(rawNode, index, definition.grafo!.length);
       const links = Array.isArray(rawNode.ligacoes) ? rawNode.ligacoes : [];
       const functionId = type === "encp"
         ? functionIdByName.get(links.find((link) => typeof link === "string") as string)

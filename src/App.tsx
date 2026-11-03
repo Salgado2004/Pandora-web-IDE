@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type PointerEvent } from "react";
 import type { ExcalidrawImperativeAPI, ExcalidrawProps } from "@excalidraw/excalidraw/types";
 import "@excalidraw/excalidraw/index.css";
 import {
@@ -47,6 +47,7 @@ export default function App() {
     new Map<string, { x: number; y: number }>(),
   );
   const lastClickRef = useRef<{ nodeId: string; at: number } | null>(null);
+  const pendingPortRef = useRef<{ nodeId: string; port: number } | null>(null);
 
   const activeFunction =
     context === "root"
@@ -169,13 +170,57 @@ export default function App() {
     pendingPositionsRef.current = new Map();
   }
 
-  function handlePointerDown() {
-    isDraggingRef.current = true;
-    pendingPositionsRef.current = new Map();
+  function getPortAtPointer(event: PointerEvent<HTMLDivElement>) {
+    if (!api) return undefined;
+    const appState = api.getAppState();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const zoom = appState.zoom.value;
+    const sceneX = (event.clientX - bounds.left) / zoom - appState.scrollX;
+    const sceneY = (event.clientY - bounds.top) / zoom - appState.scrollY;
+    const hitPadding = 6 / zoom;
+    const port = api.getSceneElements().find((element) => {
+      if (element.customData?.kind !== "pandora-port") return false;
+      if (element.customData.preview === true) return false;
+      return (
+        sceneX >= element.x - hitPadding &&
+        sceneX <= element.x + element.width + hitPadding &&
+        sceneY >= element.y - hitPadding &&
+        sceneY <= element.y + element.height + hitPadding
+      );
+    });
+    const nodeId = port?.customData?.nodeId;
+    const portIndex = port?.customData?.port;
+    const portType = port?.customData?.portType;
+    return typeof nodeId === "string" && typeof portIndex === "number"
+      ? {
+          nodeId,
+          port: portIndex,
+          type: portType,
+        }
+      : undefined;
   }
 
-  function handlePointerUp() {
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    isDraggingRef.current = true;
+    pendingPositionsRef.current = new Map();
+    const port = getPortAtPointer(event);
+    pendingPortRef.current =
+      port?.type === "output"
+        ? { nodeId: port.nodeId, port: port.port }
+        : null;
+  }
+
+  function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
     if (!api) return;
+    const sourcePort = pendingPortRef.current;
+    pendingPortRef.current = null;
+    const targetPort = getPortAtPointer(event);
+    if (sourcePort && targetPort?.type === "input") {
+      addConnectionFromPorts(sourcePort, {
+        nodeId: targetPort.nodeId,
+        port: targetPort.port,
+      });
+    }
     const selected = api.getAppState().selectedElementIds;
     const firstId = Object.keys(selected)[0];
     const element = api.getSceneElements().find((item) => item.id === firstId);
@@ -207,6 +252,48 @@ export default function App() {
       isDraggingRef.current = false;
       setProgram((current) => ({ ...current }));
     }, 100);
+  }
+
+  function addConnectionFromPorts(
+    source: { nodeId: string; port: number },
+    target: { nodeId: string; port: number },
+  ) {
+    const sourceNode = nodes.find((node) => node.id === source.nodeId);
+    const targetNode = nodes.find((node) => node.id === target.nodeId);
+    if (
+      !sourceNode ||
+      !targetNode ||
+      sourceNode.type === "lig" && sourceNode.functionPort === "output" ||
+      targetNode.type === "lig" && targetNode.functionPort === "input" ||
+      targetNode.type === "lig" && targetNode.functionPort === "output" ||
+      sourceNode.type !== "disor" && source.port !== 0 ||
+      sourceNode.type === "disor" && source.port > 1 ||
+      target.port >= getInputPortCount(targetNode) ||
+      connections.some(
+        (connection) =>
+          connection.toNodeId === target.nodeId && connection.toPort === target.port,
+      ) ||
+      connections.some(
+        (connection) =>
+          connection.fromNodeId === source.nodeId &&
+          connection.fromPort === source.port,
+      )
+    ) {
+      return;
+    }
+    updateContext((currentNodes, currentConnections) => ({
+      nodes: currentNodes,
+      connections: [
+        ...currentConnections,
+        {
+          id: `${source.nodeId}-to-${target.nodeId}-${Date.now()}`,
+          fromNodeId: source.nodeId,
+          fromPort: source.port,
+          toNodeId: target.nodeId,
+          toPort: target.port,
+        },
+      ],
+    }));
   }
 
   function updateFunction(updater: (item: PandoraFunction) => PandoraFunction) {
@@ -426,6 +513,15 @@ export default function App() {
     setSelectedNodeId(null);
   }
 
+  function removeConnection(connectionId: string) {
+    updateContext((currentNodes, currentConnections) => ({
+      nodes: currentNodes,
+      connections: currentConnections.filter(
+        (connection) => connection.id !== connectionId,
+      ),
+    }));
+  }
+
   function deleteSelectedFunction() {
     if (context !== "root" || !selectedFunction) return;
     const deletedId = selectedFunction.id;
@@ -575,6 +671,7 @@ export default function App() {
           onDeleteFunction={deleteSelectedFunction}
           getInputPortCount={getInputPortCount}
           addConnection={addConnection}
+          onRemoveConnection={removeConnection}
           importInputRef={importInputRef}
           exportError={exportError}
           onExport={exportProgram}

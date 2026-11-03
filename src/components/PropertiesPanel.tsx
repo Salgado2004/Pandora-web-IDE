@@ -35,6 +35,7 @@ type PropertiesPanelProps = {
   onDeleteFunction: () => void;
   getInputPortCount: (node: PandoraNode) => number;
   addConnection: (targetValue: string, sourcePort?: number) => void;
+  onRemoveConnection: (connectionId: string) => void;
   importInputRef: RefObject<HTMLInputElement | null>;
   exportError: string | null;
   onExport: () => void;
@@ -60,6 +61,7 @@ export function PropertiesPanel({
   onDeleteFunction,
   getInputPortCount,
   addConnection,
+  onRemoveConnection,
   importInputRef,
   exportError,
   onExport,
@@ -397,7 +399,42 @@ export function PropertiesPanel({
                     )}
                 </select>
               </label>
-              <p className="connection-count">{connections.length} conexão(ões)</p>
+              <div className="connection-list">
+                <p className="connection-count">
+                  {connections.filter(
+                    (connection) => connection.fromNodeId === selectedNode.id,
+                  ).length}{" "}
+                  conexão(ões) de saída
+                </p>
+                {connections
+                  .filter((connection) => connection.fromNodeId === selectedNode.id)
+                  .map((connection) => {
+                    const destination = nodes.find(
+                      (node) => node.id === connection.toNodeId,
+                    );
+                    const branch =
+                      selectedNode.type === "disor"
+                        ? connection.fromPort === 0
+                          ? "true"
+                          : "false"
+                        : `entrada ${connection.toPort}`;
+                    return (
+                      <div className="connection-item" key={connection.id}>
+                        <span>
+                          {destination?.id ?? connection.toNodeId} ({branch})
+                        </span>
+                        <button
+                          type="button"
+                          className="connection-remove"
+                          aria-label={`Remover conexão para ${destination?.id ?? connection.toNodeId}`}
+                          onClick={() => onRemoveConnection(connection.id)}
+                        >
+                          x
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
             </>
           ) : (
             <p>
