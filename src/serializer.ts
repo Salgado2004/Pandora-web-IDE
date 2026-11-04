@@ -6,17 +6,21 @@ import type {
   PandoraProgram,
 } from "./model";
 
-type JsonScalar = string | number | boolean;
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | { kind: "list"; elements: JsonValue[] };
 
 export type PandoraJsonProgram = {
   nome: string;
-  entradas: JsonScalar[];
+  entradas: JsonValue[];
   estado: 0;
   lista: Array<{
     id: number;
     chamada: string;
     estado: 0;
-    entradas: JsonScalar[];
+    entradas: JsonValue[];
     saidas: string[];
     grafo: Array<{
       idx: number;
@@ -28,7 +32,9 @@ export type PandoraJsonProgram = {
         };
       };
       ligacoes: Array<number | string>;
-      inputs: JsonScalar[];
+      ligacaoPortas?: Array<number | null>;
+      inputs?: JsonValue[];
+      valor?: JsonValue | JsonValue[];
       outputs: string[];
     }>;
   }>;
@@ -45,24 +51,43 @@ type JsonNode = {
     };
   };
   ligacoes?: Array<number | string>;
-  inputs?: JsonScalar[];
-  entradas?: JsonScalar[];
+  ligacaoPortas?: Array<number | null>;
+  inputs?: JsonValue[];
+  entradas?: JsonValue[];
+  valor?: JsonValue | JsonValue[];
+  funcao?: string;
 };
 
 type JsonFunction = {
   id?: number;
   chamada?: string;
   nome?: string;
-  entradas?: JsonScalar[];
+  entradas?: JsonValue[];
   grafo?: JsonNode[];
 };
 
-function parseValue(value: unknown): JsonScalar {
-  if (typeof value !== "string") return typeof value === "number" || typeof value === "boolean" ? value : "";
+function parseValue(value: unknown): JsonValue {
+  if (Array.isArray(value)) {
+    return {
+      kind: "list",
+      elements: value.map((item) => parseValue(item)),
+    };
+  }
+  if (typeof value !== "string") {
+    return typeof value === "number" || typeof value === "boolean" ? value : "";
+  }
   const trimmed = value.trim();
   if (trimmed === "") return "";
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parseValue(parsed);
+    } catch {
+      // Preserve invalid list syntax as text for the interpreter to reject.
+    }
+  }
   const numeric = Number(trimmed);
   return Number.isNaN(numeric) ? value : numeric;
 }
@@ -110,7 +135,9 @@ function serializeFunction(
   }
 
   const graph = nodes.map((node, index) => {
-    const outgoing = connectionsBySource.get(node.id) ?? [];
+    const outgoing = [...(connectionsBySource.get(node.id) ?? [])].sort(
+      (left, right) => left.toPort - right.toPort,
+    );
     const destinations = outgoing.map((connection) => {
       const destinationIndex = indexById.get(connection.toNodeId);
       if (destinationIndex === undefined) {
@@ -123,19 +150,25 @@ function serializeFunction(
         ? [
             ...(node.functionId
               ? [functionsById.get(node.functionId)?.name ?? (() => {
-                  throw new Error(`Função chamada não encontrada pelo nodo ${node.id}`);
+                  throw new Error(`Função referenciada não encontrada pelo nodo ${node.id}`);
                 })()]
               : (() => {
-                  throw new Error(`Nodo encp ${node.id} não possui função selecionada`);
+                  throw new Error(`Nodo ${node.type} ${node.id} não possui função selecionada`);
                 })()),
             ...destinations,
           ]
         : node.functionPort === "output"
           ? ["output"]
           : destinations;
+    const ligacaoPortas: Array<number | null> =
+      node.type === "encp"
+        ? [null, ...outgoing.map((connection) => connection.toPort)]
+        : outgoing.map((connection) => connection.toPort);
     const inputCount =
       node.type === "encp"
         ? functionsById.get(node.functionId ?? "")?.parameters.length ?? 0
+        : node.type === "apply"
+          ? node.arity ?? 2
         : node.type === "lig"
           ? 1
           : node.type === "const"
@@ -144,6 +177,10 @@ function serializeFunction(
               ? 1
               : node.type === "visor"
                 ? 2
+                : ["head", "tail", "is-empty"].includes(node.type)
+                ? 1
+                : node.type === "list" || node.type === "func"
+                ? 0
                 : 2;
     return {
       idx: index,
@@ -155,7 +192,23 @@ function serializeFunction(
         },
       },
       ligacoes: links,
-      inputs: node.type === "const" ? [parseValue(node.value)] : Array.from({ length: inputCount }, () => ""),
+      ligacaoPortas,
+      ...(node.type === "const"
+        ? { inputs: [parseValue(node.value)] }
+        : node.type === "list"
+          ? { valor: [] }
+          : { inputs: Array.from({ length: inputCount }, () => "") }),
+      ...(node.type === "func"
+        ? {
+            funcao: node.functionId
+              ? functionsById.get(node.functionId)?.name ?? (() => {
+                  throw new Error(`Função referenciada não encontrada pelo nodo ${node.id}`);
+                })()
+              : (() => {
+                  throw new Error(`Nodo func ${node.id} não possui função selecionada`);
+                })(),
+          }
+        : {}),
       outputs: [""],
     };
   });
@@ -189,7 +242,8 @@ export function programToPandoraJson(program: PandoraProgram): PandoraJsonProgra
 function isNodeType(value: string): value is PandoraNodeType {
   return [
     "lig", "const", "soma", "subs", "mult", "divs", "igual", "ngual",
-    "meno", "maio", "encp", "disor", "visor",
+    "meno", "maio", "encp", "func", "apply", "list", "cons", "head", "tail",
+    "is-empty", "disor", "visor",
   ].includes(value);
 }
 
@@ -253,9 +307,15 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
       const links = Array.isArray(rawNode.ligacoes) ? rawNode.ligacoes : [];
       const functionId = type === "encp"
         ? functionIdByName.get(links.find((link) => typeof link === "string") as string)
+        : type === "func"
+          ? functionIdByName.get(
+              typeof rawNode.funcao === "string"
+                ? rawNode.funcao
+                : links.find((link) => typeof link === "string") as string,
+            )
         : undefined;
-      if (type === "encp" && !functionId) {
-        throw new Error(`Chamada encp inválida no nodo ${index} da função ${names[functionIndex]}`);
+      if ((type === "encp" || type === "func") && !functionId) {
+        throw new Error(`Referência de função inválida no nodo ${index} da função ${names[functionIndex]}`);
       }
       const inputValues = rawNode.inputs ?? rawNode.entradas ?? [];
       return {
@@ -267,8 +327,14 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
         ...(type === "const" ? { value: inputValues[0] ?? "" } : {}),
         ...(functionId ? {
           functionId,
-          functionName: links.find((link) => typeof link === "string"),
+          functionName:
+            type === "func" && typeof rawNode.funcao === "string"
+              ? rawNode.funcao
+              : links.find((link) => typeof link === "string"),
         } : {}),
+        ...(type === "apply"
+          ? { arity: Math.max(1, inputValues.length || 2) }
+          : {}),
         ...(type === "lig" && index < (definition.entradas?.length ?? 0)
           ? { functionPort: "input" as const, functionPortIndex: index }
           : {}),

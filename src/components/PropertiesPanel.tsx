@@ -252,6 +252,62 @@ export function PropertiesPanel({
                   </select>
                 </label>
               )}
+              {selectedNode.type === "func" && (
+                <label>
+                  Função referenciada
+                  <select
+                    value={selectedNode.functionId ?? ""}
+                    onChange={(event) => {
+                      const calledFunction = program.functions.find(
+                        (item) => item.id === event.target.value,
+                      );
+                      if (!calledFunction) return;
+                      updateContext((currentNodes, currentConnections) => ({
+                        nodes: currentNodes.map((node) =>
+                          node.id === selectedNode.id
+                            ? {
+                                ...node,
+                                functionId: calledFunction.id,
+                                functionName: calledFunction.name,
+                              }
+                            : node,
+                        ),
+                        connections: currentConnections,
+                      }));
+                    }}
+                  >
+                    <option value="">Escolha uma função</option>
+                    {program.functions.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {selectedNode.type === "apply" && (
+                <label>
+                  Entradas
+                  <input
+                    type="number"
+                    min="1"
+                    value={selectedNode.arity ?? 2}
+                    onChange={(event) => {
+                      const arity = Math.max(1, Number(event.target.value) || 1);
+                      updateContext((currentNodes, currentConnections) => ({
+                        nodes: currentNodes.map((node) =>
+                          node.id === selectedNode.id ? { ...node, arity } : node,
+                        ),
+                        connections: currentConnections.filter(
+                          (connection) =>
+                            connection.toNodeId !== selectedNode.id ||
+                            connection.toPort < arity,
+                        ),
+                      }));
+                    }}
+                  />
+                </label>
+              )}
               {selectedNode.type === "lig" && context !== "root" && (
                 <>
                   <label>

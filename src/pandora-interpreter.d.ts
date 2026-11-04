@@ -1,5 +1,9 @@
 declare module "@pandora-lang/interpreter" {
-  type PandoraValue = string | number | boolean;
+  type PandoraValue =
+    | string
+    | number
+    | boolean
+    | { kind: "list"; elements: PandoraValue[] };
 
   type PandoraInterpreterFile = {
     nome: string;

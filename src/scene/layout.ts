@@ -42,6 +42,7 @@ export function nodeInputPortCount(
     node.functionId
       ? functions.find((item) => item.id === node.functionId)?.parameters.length ?? 0
       : 0,
+    node.arity ?? 2,
   );
 }
 

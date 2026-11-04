@@ -12,7 +12,20 @@ export type PandoraNodeType =
   | "encp"
   | "disor"
   | "visor"
-  | "funcao";
+  | "funcao"
+  | "func"
+  | "apply"
+  | "list"
+  | "cons"
+  | "head"
+  | "tail"
+  | "is-empty";
+
+export type PandoraValue =
+  | string
+  | number
+  | boolean
+  | { kind: "list"; elements: PandoraValue[] };
 
 export type PandoraNode = {
   id: string;
@@ -20,12 +33,13 @@ export type PandoraNode = {
   x: number;
   y: number;
   idx?: number;
-  value?: string | number | boolean;
+  value?: PandoraValue;
   functionName?: string;
   functionId?: string;
   functionPort?: "input" | "output";
   functionPortIndex?: number;
   derivedFrom?: string;
+  arity?: number;
 };
 
 export type PandoraConnection = {
@@ -90,13 +104,28 @@ export const nodeVisuals: Record<
   disor: { label: "se", shape: "diamond", color: "#ffd4c7" },
   visor: { label: "fim-se", shape: "diamond", color: "#ffd4c7" },
   funcao: { label: "função", shape: "rectangle", color: "#e4d4ff" },
+  func: { label: "func", shape: "ellipse", color: "#e4d4ff" },
+  apply: { label: "apply", shape: "rectangle", color: "#e4d4ff" },
+  list: { label: "list", shape: "ellipse", color: "#fcbbbb" },
+  cons: { label: "cons", shape: "ellipse", color: "#fcbbbb" },
+  head: { label: "head", shape: "ellipse", color: "#fcbbbb" },
+  tail: { label: "tail", shape: "ellipse", color: "#fcbbbb" },
+  "is-empty": { label: "[ ]", shape: "ellipse", color: "#fcbbbb" },
 };
 
-export function inputPortCount(type: PandoraNodeType, functionArity = 0): number {
+export function inputPortCount(
+  type: PandoraNodeType,
+  functionArity = 0,
+  nodeArity = 2,
+): number {
   if (["soma", "subs", "mult", "divs", "igual", "ngual", "meno", "maio"].includes(type)) return 2;
   if (type === "disor") return 1;
   if (type === "visor") return 2;
   if (type === "encp") return functionArity;
+  if (type === "func" || type === "list") return 0;
+  if (type === "apply") return nodeArity;
+  if (type === "cons") return 2;
+  if (["head", "tail", "is-empty"].includes(type)) return 1;
   if (type === "lig") return 1;
   return 0;
 }

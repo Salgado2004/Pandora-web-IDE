@@ -306,7 +306,8 @@ export default function App() {
         return {
           ...nextItem,
           nodes: nextItem.nodes.map((node) =>
-            node.type === "encp" && node.functionId === selectedFunction.id
+            (node.type === "encp" || node.type === "func") &&
+              node.functionId === selectedFunction.id
               ? { ...node, functionName: nextFunction.name }
               : node.type === "lig" &&
                   node.functionPort === "input" &&
@@ -405,6 +406,7 @@ export default function App() {
       y,
       ...(nextIdx === undefined ? {} : { idx: nextIdx }),
       ...(type === "const" ? { value: "" } : {}),
+      ...(type === "apply" ? { arity: 2 } : {}),
     };
     const newNodes = [newNode];
     if (type === "disor") {
@@ -427,7 +429,7 @@ export default function App() {
   function getInputPortCount(node: PandoraNode) {
     if (node.type === "lig" && node.functionPort === "input") return 0;
     if (node.type === "lig" && node.functionPort === "output") return 1;
-    if (node.type !== "encp") return inputPortCount(node.type);
+    if (node.type !== "encp") return inputPortCount(node.type, 0, node.arity ?? 2);
     return (
       program.functions.find((item) => item.id === node.functionId)?.parameters.length ?? 0
     );
@@ -532,7 +534,7 @@ export default function App() {
           ? remainingFunctions[0]?.id ?? ""
           : current.entryFunctionId;
       const clearCall = (node: PandoraNode): PandoraNode =>
-        node.type === "encp" && node.functionId === deletedId
+        (node.type === "encp" || node.type === "func") && node.functionId === deletedId
           ? { ...node, functionId: undefined, functionName: undefined }
           : node;
       return {
@@ -622,6 +624,16 @@ export default function App() {
   function formatExecutionValue(value: unknown): string {
     if (typeof value === "string") return value;
     if (typeof value === "number" || typeof value === "boolean") return String(value);
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      "kind" in value &&
+      value.kind === "list" &&
+      "elements" in value &&
+      Array.isArray(value.elements)
+    ) {
+      return JSON.stringify(value.elements);
+    }
     return JSON.stringify(value);
   }
 

@@ -41,6 +41,8 @@ export function nodeToElements(
         ? String(node.value)
         : node.type === "encp"
           ? node.functionName ?? "encp"
+          : node.type === "func"
+            ? node.functionName ?? "func"
         : node.type === "funcao"
           ? node.functionName ?? "função"
         : visual.label;

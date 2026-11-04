@@ -26,7 +26,8 @@ export function EditorHeader({
     { title: "Fluxo", types: ["lig", "const"] },
     { title: "Operadores aritméticos", types: ["soma", "subs", "mult", "divs"] },
     { title: "Operadores lógicos", types: ["igual", "ngual", "meno", "maio"] },
-    { title: "Funções", types: ["encp"] },
+    { title: "Funções", types: ["encp", "func", "apply"] },
+    { title: "Listas", types: ["list", "cons", "head", "tail", "is-empty"] },
     { title: "Condicional", types: ["disor"] },
   ];
   const [collapsedSections, setCollapsedSections] = useState(
