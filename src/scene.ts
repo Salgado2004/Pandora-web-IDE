@@ -2,6 +2,7 @@ import { convertToExcalidrawElements } from "@excalidraw/excalidraw";
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
 import type { PandoraConnection, PandoraFunction, PandoraNode } from "./model";
 import { nodeVisuals, outputPortCount } from "./model";
+import { nodeIconFileId } from "./icons";
 import { connectionsToElements } from "./scene/connections";
 export { CONNECTION_DATA_KIND, NODE_DATA_KIND } from "./scene/metadata";
 import { NODE_DATA_KIND, CONNECTION_DATA_KIND } from "./scene/metadata";
@@ -30,22 +31,6 @@ export function nodeToElements(
   const inputCount = nodeInputPortCount(node, functions);
   const width = NODE_WIDTH;
   const height = NODE_HEIGHT;
-  const text =
-    node.type === "lig"
-      ? node.functionPort
-        ? `${node.functionPort}${node.functionPort === "input" ? ` ${node.functionPortIndex ?? 0}` : ""}`
-        : selectedNodeId === node.id
-          ? String(node.idx ?? node.id)
-          : ""
-      : node.type === "const" && node.value !== undefined
-        ? String(node.value)
-        : node.type === "encp"
-          ? node.functionName ?? "encp"
-          : node.type === "func"
-            ? node.functionName ?? "func"
-        : node.type === "funcao"
-          ? node.functionName ?? "função"
-        : visual.label;
   const fontSize = operationTypes.has(node.type)
     ? 48
     : 20;
@@ -300,17 +285,16 @@ export function nodeToElements(
     ...outputPorts,
     ...portLabels,
     {
-      type: "text",
+      type: "image",
       id: `${node.id}-text`,
-      x: node.x + width / 2,
-      y: node.y + height / 2,
-      text,
-      fontSize,
-      fontFamily: 2,
-      textAlign: "center",
-      verticalAlign: "middle",
-      width,
-      height,
+      x: node.x + width / 2 - 15,
+      y: node.y + height / 2 - 15,
+      width: 30,
+      height: 30,
+      fileId: nodeIconFileId(node.type),
+      status: "saved",
+      scale: [1, 1],
+      crop: null,
       customData: {
         kind: NODE_DATA_KIND,
         nodeId: node.id,
@@ -499,10 +483,8 @@ function compactExpandedFunctionToElements(
   }));
   const nodeIds = new Map(innerNodes.map((item, index) => [item.id, previewNodes[index].id]));
   const byId = new Map(previewNodes.map((item) => [item.id, item]));
-  const previewNodesWithText = new Set(["const", "encp", ...operationTypes]);
   const previewElements = previewNodes.flatMap((item) => {
     const visual = nodeVisuals[item.type];
-    const showText = previewNodesWithText.has(item.type);
     return [
       {
         type: visual.shape,
@@ -522,19 +504,17 @@ function compactExpandedFunctionToElements(
         groupIds: [node.id],
         locked: true,
       },
-      ...(showText
-        ? [{
-            type: "text",
+      {
+            type: "image",
             id: `${item.id}-compact-text`,
-            x: item.x + FUNCTION_PREVIEW_NODE_WIDTH / 2,
-            y: item.y + FUNCTION_PREVIEW_NODE_HEIGHT / 2,
-            text: visual.label,
-            fontSize: 18,
-            fontFamily: 2,
-            textAlign: "center",
-            verticalAlign: "middle",
-            width: FUNCTION_PREVIEW_NODE_WIDTH,
-            height: FUNCTION_PREVIEW_NODE_HEIGHT,
+            x: item.x + FUNCTION_PREVIEW_NODE_WIDTH * 0.275,
+            y: item.y + FUNCTION_PREVIEW_NODE_HEIGHT * 0.275,
+            width: FUNCTION_PREVIEW_NODE_WIDTH * 0.45,
+            height: FUNCTION_PREVIEW_NODE_HEIGHT * 0.45,
+            fileId: nodeIconFileId(item.type),
+            status: "saved",
+            scale: [1, 1],
+            crop: null,
             customData: {
               kind: NODE_DATA_KIND,
               nodeId: node.id,
@@ -542,8 +522,7 @@ function compactExpandedFunctionToElements(
             },
             groupIds: [node.id],
             locked: true,
-          }]
-        : []),
+          },
     ] as ExcalidrawElementSkeleton[];
   });
   const previewConnections = definition.connections.flatMap((connection) => {

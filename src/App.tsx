@@ -11,6 +11,7 @@ import {
   type PandoraProgram,
 } from "./model";
 import { CONNECTION_DATA_KIND, NODE_DATA_KIND, nodesToElements } from "./scene";
+import { getNodeIconFiles } from "./icons";
 import { pandoraJsonToProgram, programToPandoraJson } from "./serializer";
 import {
   Interpretador,
@@ -74,7 +75,10 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (!isDraggingRef.current) api?.updateScene({ elements });
+    if (!isDraggingRef.current) {
+      api?.addFiles(getNodeIconFiles());
+      api?.updateScene({ elements });
+    }
     if (!isDraggingRef.current && elements.length === 0) api?.resetScene();
   }, [api, elements]);
 

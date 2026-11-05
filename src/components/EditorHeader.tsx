@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { PandoraNodeType } from "../model";
 import { nodeVisuals } from "../model";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { nodeIcon } from "../icons";
 
 type EditorHeaderProps = {
   activeFunctionName?: string;
@@ -110,7 +112,7 @@ export function EditorHeader({
                         className="node-menu-icon"
                         style={{ backgroundColor: nodeVisuals[type].color }}
                       >
-                        {nodeVisuals[type].label}
+                        <FontAwesomeIcon icon={nodeIcon(type)} />
                       </span>
                       <span>{type}</span>
                     </button>

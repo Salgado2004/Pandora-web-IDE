@@ -88,29 +88,34 @@ export const editableNodeTypes: PandoraNodeType[] = [
 
 export const nodeVisuals: Record<
   PandoraNodeType,
-  { label: string; shape: "ellipse" | "rectangle" | "diamond"; color: string }
+  {
+    label: string;
+    iconClass: string;
+    shape: "ellipse" | "rectangle" | "diamond";
+    color: string;
+  }
 > = {
-  lig: { label: "lig", shape: "ellipse", color: "#fff3a3" },
-  const: { label: "C", shape: "ellipse", color: "#ffd6e7" },
-  soma: { label: "+", shape: "rectangle", color: "#c9e7ff" },
-  subs: { label: "-", shape: "rectangle", color: "#c9e7ff" },
-  mult: { label: "*", shape: "rectangle", color: "#c9e7ff" },
-  divs: { label: "/", shape: "rectangle", color: "#c9e7ff" },
-  igual: { label: "=", shape: "rectangle", color: "#d4f5d0" },
-  ngual: { label: "!=", shape: "rectangle", color: "#d4f5d0" },
-  meno: { label: "<", shape: "rectangle", color: "#d4f5d0" },
-  maio: { label: ">", shape: "rectangle", color: "#d4f5d0" },
-  encp: { label: "ƒ", shape: "rectangle", color: "#e4d4ff" },
-  disor: { label: "se", shape: "diamond", color: "#ffd4c7" },
-  visor: { label: "fim-se", shape: "diamond", color: "#ffd4c7" },
-  funcao: { label: "função", shape: "rectangle", color: "#e4d4ff" },
-  func: { label: "func", shape: "ellipse", color: "#e4d4ff" },
-  apply: { label: "apply", shape: "rectangle", color: "#e4d4ff" },
-  list: { label: "list", shape: "ellipse", color: "#fcbbbb" },
-  cons: { label: "cons", shape: "ellipse", color: "#fcbbbb" },
-  head: { label: "head", shape: "ellipse", color: "#fcbbbb" },
-  tail: { label: "tail", shape: "ellipse", color: "#fcbbbb" },
-  "is-empty": { label: "[ ]", shape: "ellipse", color: "#fcbbbb" },
+  lig: { label: "lig", iconClass: "fa-solid fa-link", shape: "ellipse", color: "#fff3a3" },
+  const: { label: "const", iconClass: "fa-solid fa-c", shape: "ellipse", color: "#ffd6e7" },
+  soma: { label: "soma", iconClass: "fa-solid fa-plus", shape: "rectangle", color: "#c9e7ff" },
+  subs: { label: "subtração", iconClass: "fa-solid fa-minus", shape: "rectangle", color: "#c9e7ff" },
+  mult: { label: "multiplicação", iconClass: "fa-solid fa-xmark", shape: "rectangle", color: "#c9e7ff" },
+  divs: { label: "divisão", iconClass: "fa-solid fa-divide", shape: "rectangle", color: "#c9e7ff" },
+  igual: { label: "igual", iconClass: "fa-solid fa-equals", shape: "rectangle", color: "#d4f5d0" },
+  ngual: { label: "diferente", iconClass: "fa-solid fa-not-equal", shape: "rectangle", color: "#d4f5d0" },
+  meno: { label: "menor", iconClass: "fa-solid fa-less-than", shape: "rectangle", color: "#d4f5d0" },
+  maio: { label: "maior", iconClass: "fa-solid fa-greater-than", shape: "rectangle", color: "#d4f5d0" },
+  encp: { label: "chamada", iconClass: "fa-solid fa-function", shape: "rectangle", color: "#e4d4ff" },
+  disor: { label: "desvio", iconClass: "fa-solid fa-code-fork", shape: "diamond", color: "#ffd4c7" },
+  visor: { label: "fim do desvio", iconClass: "fa-solid fa-code-merge", shape: "diamond", color: "#ffd4c7" },
+  funcao: { label: "função", iconClass: "fa-solid fa-square-root-variable", shape: "rectangle", color: "#e4d4ff" },
+  func: { label: "função", iconClass: "fa-solid fa-lambda", shape: "ellipse", color: "#e4d4ff" },
+  apply: { label: "aplicação", iconClass: "fa-solid fa-arrow-up-right-from-square", shape: "rectangle", color: "#e4d4ff" },
+  list: { label: "lista", iconClass: "fa-solid fa-list", shape: "ellipse", color: "#fcbbbb" },
+  cons: { label: "construtor", iconClass: "fa-solid fa-circle-plus", shape: "ellipse", color: "#fcbbbb" },
+  head: { label: "primeiro", iconClass: "fa-solid fa-arrow-up", shape: "ellipse", color: "#fcbbbb" },
+  tail: { label: "restante", iconClass: "fa-solid fa-arrow-down", shape: "ellipse", color: "#fcbbbb" },
+  "is-empty": { label: "lista vazia", iconClass: "fa-solid fa-circle-xmark", shape: "ellipse", color: "#fcbbbb" },
 };
 
 export function inputPortCount(
