@@ -1,12 +1,12 @@
 import {
-  faArrowDown,
-  faArrowUp,
   faArrowUpRightFromSquare,
+  faBackwardStep,
   faCircleDot,
   faCirclePlus,
   faCircleXmark,
   faDivide,
   faEquals,
+  faForwardStep,
   faCode,
   faGreaterThan,
   faLessThan,
@@ -22,6 +22,7 @@ import {
   faCodeMerge,
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
+import { faCreativeCommonsZero } from "@fortawesome/free-brands-svg-icons";
 import type { BinaryFileData, DataURL } from "@excalidraw/excalidraw/types";
 import type { FileId } from "@excalidraw/excalidraw/element/types";
 import type { PandoraNodeType } from "./model";
@@ -46,9 +47,9 @@ const icons: Record<string, IconDefinition> = {
   "fa-solid fa-arrow-up-right-from-square": faArrowUpRightFromSquare,
   "fa-solid fa-list": faList,
   "fa-solid fa-circle-plus": faCirclePlus,
-  "fa-solid fa-arrow-up": faArrowUp,
-  "fa-solid fa-arrow-down": faArrowDown,
-  "fa-solid fa-circle-xmark": faCircleXmark,
+  "fa-solid fa-backward-step": faBackwardStep,
+  "fa-solid fa-forward-step": faForwardStep,
+  "fa-brands fa-creative-commons-zero": faCreativeCommonsZero,
 };
 
 export function nodeIcon(type: PandoraNodeType): IconDefinition {

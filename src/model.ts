@@ -113,9 +113,9 @@ export const nodeVisuals: Record<
   apply: { label: "aplicação", iconClass: "fa-solid fa-arrow-up-right-from-square", shape: "rectangle", color: "#e4d4ff" },
   list: { label: "lista", iconClass: "fa-solid fa-list", shape: "ellipse", color: "#fcbbbb" },
   cons: { label: "construtor", iconClass: "fa-solid fa-circle-plus", shape: "ellipse", color: "#fcbbbb" },
-  head: { label: "primeiro", iconClass: "fa-solid fa-arrow-up", shape: "ellipse", color: "#fcbbbb" },
-  tail: { label: "restante", iconClass: "fa-solid fa-arrow-down", shape: "ellipse", color: "#fcbbbb" },
-  "is-empty": { label: "lista vazia", iconClass: "fa-solid fa-circle-xmark", shape: "ellipse", color: "#fcbbbb" },
+  head: { label: "primeiro", iconClass: "fa-solid fa-backward-step", shape: "ellipse", color: "#fcbbbb" },
+  tail: { label: "restante", iconClass: "fa-solid fa-forward-step", shape: "ellipse", color: "#fcbbbb" },
+  "is-empty": { label: "lista vazia", iconClass: "fa-brands fa-creative-commons-zero", shape: "ellipse", color: "#fcbbbb" },
 };
 
 export function inputPortCount(
