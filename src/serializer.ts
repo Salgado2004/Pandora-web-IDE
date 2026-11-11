@@ -173,6 +173,8 @@ function serializeFunction(
           ? 1
           : node.type === "const"
             ? 0
+            : ["soma", "subs", "mult", "divs", "resto", "igual", "ngual", "meno", "maio"].includes(node.type)
+              ? 2
             : node.type === "disor"
               ? 1
               : node.type === "visor"
@@ -241,7 +243,7 @@ export function programToPandoraJson(program: PandoraProgram): PandoraJsonProgra
 
 function isNodeType(value: string): value is PandoraNodeType {
   return [
-    "lig", "const", "soma", "subs", "mult", "divs", "igual", "ngual",
+    "lig", "const", "soma", "subs", "mult", "divs", "resto", "igual", "ngual",
     "meno", "maio", "encp", "func", "apply", "list", "cons", "head", "tail",
     "is-empty", "disor", "visor",
   ].includes(value);

@@ -21,6 +21,7 @@ npm run build
 
 - formas Pandora derivadas do vocabulário visual aprovado;
 - nós `lig`, `soma` e `visor` como cena inicial;
+- nodo aritmético `resto` (`%`) para calcular o resto da divisão;
 - seleção e movimentação pelo Excalidraw;
 - painel lateral para trocar o tipo do nodo;
 - edição do valor de um nodo `const`;

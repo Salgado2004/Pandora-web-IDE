@@ -15,6 +15,7 @@ export const operationTypes = new Set([
   "subs",
   "mult",
   "divs",
+  "resto",
   "igual",
   "ngual",
   "meno",

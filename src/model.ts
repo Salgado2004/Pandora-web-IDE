@@ -5,6 +5,7 @@ export type PandoraNodeType =
   | "subs"
   | "mult"
   | "divs"
+  | "resto"
   | "igual"
   | "ngual"
   | "meno"
@@ -78,6 +79,7 @@ export const editableNodeTypes: PandoraNodeType[] = [
   "subs",
   "mult",
   "divs",
+  "resto",
   "igual",
   "ngual",
   "meno",
@@ -101,6 +103,7 @@ export const nodeVisuals: Record<
   subs: { label: "subtração", iconClass: "fa-solid fa-minus", shape: "rectangle", color: "#c9e7ff" },
   mult: { label: "multiplicação", iconClass: "fa-solid fa-xmark", shape: "rectangle", color: "#c9e7ff" },
   divs: { label: "divisão", iconClass: "fa-solid fa-divide", shape: "rectangle", color: "#c9e7ff" },
+  resto: { label: "resto", iconClass: "fa-solid fa-percent", shape: "rectangle", color: "#c9e7ff" },
   igual: { label: "igual", iconClass: "fa-solid fa-equals", shape: "rectangle", color: "#d4f5d0" },
   ngual: { label: "diferente", iconClass: "fa-solid fa-not-equal", shape: "rectangle", color: "#d4f5d0" },
   meno: { label: "menor", iconClass: "fa-solid fa-less-than", shape: "rectangle", color: "#d4f5d0" },
@@ -123,7 +126,7 @@ export function inputPortCount(
   functionArity = 0,
   nodeArity = 2,
 ): number {
-  if (["soma", "subs", "mult", "divs", "igual", "ngual", "meno", "maio"].includes(type)) return 2;
+  if (["soma", "subs", "mult", "divs", "resto", "igual", "ngual", "meno", "maio"].includes(type)) return 2;
   if (type === "disor") return 1;
   if (type === "visor") return 2;
   if (type === "encp") return functionArity;
