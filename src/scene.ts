@@ -141,7 +141,9 @@ export function nodeToElements(
     const definition = functions.find((item) => item.id === node.functionId);
     if (!definition) return nodeToElements(node, selectedNodeId, functions);
 
-    const innerNodes = definition.nodes.filter((item) => !item.derivedFrom);
+    const innerNodes = definition.nodes.filter(
+      (item) => !item.derivedFrom || item.type === "visor",
+    );
     const minX = Math.min(...innerNodes.map((item) => item.x), 0);
     const minY = Math.min(...innerNodes.map((item) => item.y), 0);
     const maxX = Math.max(...innerNodes.map((item) => item.x), 0);
@@ -316,7 +318,9 @@ function expandedFunctionToElements(
 ): ExcalidrawElementSkeleton[] {
   const definition = functions.find((item) => item.id === node.functionId);
   if (!definition) return nodeToElements(node, selectedNodeId, functions);
-  const innerNodes = definition.nodes.filter((item) => !item.derivedFrom);
+  const innerNodes = definition.nodes.filter(
+    (item) => !item.derivedFrom || item.type === "visor",
+  );
   const minX = Math.min(...innerNodes.map((item) => item.x), 0);
   const minY = Math.min(...innerNodes.map((item) => item.y), 0);
   const maxX = Math.max(...innerNodes.map((item) => item.x), 0);
