@@ -27,7 +27,7 @@ export function EditorHeader({
   const nodeSections: Array<{ title: string; types: PandoraNodeType[] }> = [
     { title: "Fluxo", types: ["lig", "const"] },
     { title: "Operadores aritméticos", types: ["soma", "subs", "mult", "divs", "resto"] },
-    { title: "Operadores lógicos", types: ["igual", "ngual", "meno", "maio"] },
+    { title: "Operadores lógicos", types: ["igual", "ngual", "meno", "maio", "and", "or"] },
     { title: "Funções", types: ["encp", "func", "apply"] },
     { title: "Listas", types: ["list", "cons", "head", "tail", "is-empty"] },
     { title: "Condicional", types: ["disor"] },

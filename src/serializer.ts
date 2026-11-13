@@ -244,7 +244,7 @@ export function programToPandoraJson(program: PandoraProgram): PandoraJsonProgra
 function isNodeType(value: string): value is PandoraNodeType {
   return [
     "lig", "const", "soma", "subs", "mult", "divs", "resto", "igual", "ngual",
-    "meno", "maio", "encp", "func", "apply", "list", "cons", "head", "tail",
+    "meno", "maio", "and", "or", "encp", "func", "apply", "list", "cons", "head", "tail",
     "is-empty", "disor", "visor",
   ].includes(value);
 }
