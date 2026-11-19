@@ -180,8 +180,10 @@ function serializeFunction(
   }
 
   const graph = nodes.map((node, index) => {
-    const outgoing = [...(connectionsBySource.get(node.id) ?? [])].sort(
-      (left, right) => left.toPort - right.toPort,
+    const outgoing = [...(connectionsBySource.get(node.id) ?? [])].sort((left, right) =>
+      node.type === "disor"
+        ? left.fromPort - right.fromPort
+        : left.toPort - right.toPort,
     );
     const destinations = outgoing.map((connection) => {
       const destinationIndex = indexById.get(connection.toNodeId);
