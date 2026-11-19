@@ -358,8 +358,13 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
         if (!toNode) {
           throw new Error(`Ligação aponta para um nodo inexistente na função ${names[functionIndex]}`);
         }
-        const toPort = incomingPorts.get(link) ?? 0;
-        incomingPorts.set(link, toPort + 1);
+        const declaredToPort = rawNode.ligacaoPortas?.[linkIndex];
+        const fallbackToPort = incomingPorts.get(link) ?? 0;
+        const toPort =
+          typeof declaredToPort === "number" && Number.isInteger(declaredToPort)
+            ? declaredToPort
+            : fallbackToPort;
+        incomingPorts.set(link, fallbackToPort + 1);
         connections.push({
           id: `${functionIds[functionIndex]}-connection-${connections.length}`,
           fromNodeId: fromNode.id,
