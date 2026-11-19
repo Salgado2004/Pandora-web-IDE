@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { PandoraFunction, PandoraProgram } from "../model";
+import { formatParameterValue, parseParameterInput } from "../serializer";
 
 type ExecutionPanelProps = {
   entryFunction: PandoraFunction;
@@ -46,12 +47,14 @@ export function ExecutionPanel({
                 <label key={`entry-parameter-${index}`}>
                   {parameter.name}
                   <input
-                    value={program.parameterValues[index] ?? ""}
+                    value={formatParameterValue(program.parameterValues[index])}
                     onChange={(event) =>
                       setProgram((current) => ({
                         ...current,
                         parameterValues: current.parameterValues.map((value, valueIndex) =>
-                          valueIndex === index ? event.target.value : value,
+                          valueIndex === index
+                            ? parseParameterInput(event.target.value, value)
+                            : value,
                         ),
                       }))
                     }

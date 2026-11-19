@@ -10,7 +10,8 @@ type JsonValue =
   | string
   | number
   | boolean
-  | { kind: "list"; elements: JsonValue[] };
+  | { kind: "list"; elements: JsonValue[] }
+  | { kind: "function"; functionId: string };
 
 export type PandoraJsonProgram = {
   nome: string;
@@ -73,9 +74,30 @@ function parseValue(value: unknown): JsonValue {
       elements: value.map((item) => parseValue(item)),
     };
   }
-  if (typeof value !== "string") {
-    return typeof value === "number" || typeof value === "boolean" ? value : "";
+  if (value !== null && typeof value === "object") {
+    if (
+      "kind" in value &&
+      value.kind === "list" &&
+      "elements" in value &&
+      Array.isArray(value.elements)
+    ) {
+      return {
+        kind: "list",
+        elements: value.elements.map((item) => parseValue(item)),
+      };
+    }
+    if (
+      "kind" in value &&
+      value.kind === "function" &&
+      "functionId" in value &&
+      typeof value.functionId === "string"
+    ) {
+      return { kind: "function", functionId: value.functionId };
+    }
+    return "";
   }
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  if (typeof value !== "string") return "";
   const trimmed = value.trim();
   if (trimmed === "") return "";
   if (trimmed === "true") return true;
@@ -90,6 +112,29 @@ function parseValue(value: unknown): JsonValue {
   }
   const numeric = Number(trimmed);
   return Number.isNaN(numeric) ? value : numeric;
+}
+
+export function formatParameterValue(value: JsonValue | undefined): string {
+  if (value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (value.kind === "function") return value.functionId;
+  return JSON.stringify(value.elements);
+}
+
+export function parseParameterInput(
+  text: string,
+  previous: JsonValue | undefined,
+): JsonValue {
+  if (
+    previous !== undefined &&
+    typeof previous === "object" &&
+    previous.kind === "function" &&
+    text === previous.functionId
+  ) {
+    return previous;
+  }
+  return parseValue(text);
 }
 
 function orderedNodes(definition: PandoraFunction): PandoraNode[] {
@@ -401,7 +446,7 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
     functions,
     entryFunctionId: entryFunction.id,
     parameterValues: Array.isArray(raw.entradas)
-      ? raw.entradas.map((value) => String(value ?? ""))
+      ? raw.entradas.map((value) => parseValue(value))
       : [],
   };
 }

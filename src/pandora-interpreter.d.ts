@@ -3,7 +3,8 @@ declare module "@pandora-lang/interpreter" {
     | string
     | number
     | boolean
-    | { kind: "list"; elements: PandoraValue[] };
+    | { kind: "list"; elements: PandoraValue[] }
+    | { kind: "function"; functionId: string };
 
   type PandoraInterpreterFile = {
     nome: string;

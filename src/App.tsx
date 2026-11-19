@@ -628,17 +628,21 @@ export default function App() {
   function formatExecutionValue(value: unknown): string {
     if (typeof value === "string") return value;
     if (typeof value === "number" || typeof value === "boolean") return String(value);
-    if (
-      value !== null &&
-      typeof value === "object" &&
-      "kind" in value &&
-      value.kind === "list" &&
-      "elements" in value &&
-      Array.isArray(value.elements)
-    ) {
-      return JSON.stringify(value.elements);
-    }
-    return JSON.stringify(value);
+    const normalizeLists = (current: unknown): unknown => {
+      if (Array.isArray(current)) return current.map(normalizeLists);
+      if (
+        current !== null &&
+        typeof current === "object" &&
+        "kind" in current &&
+        current.kind === "list" &&
+        "elements" in current &&
+        Array.isArray(current.elements)
+      ) {
+        return current.elements.map(normalizeLists);
+      }
+      return current;
+    };
+    return JSON.stringify(normalizeLists(value)) ?? String(value);
   }
 
   const entryFunction =

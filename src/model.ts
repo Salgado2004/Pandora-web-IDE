@@ -28,7 +28,8 @@ export type PandoraValue =
   | string
   | number
   | boolean
-  | { kind: "list"; elements: PandoraValue[] };
+  | { kind: "list"; elements: PandoraValue[] }
+  | { kind: "function"; functionId: string };
 
 export type PandoraNode = {
   id: string;
@@ -71,7 +72,7 @@ export type PandoraProgram = {
   connections: PandoraConnection[];
   functions: PandoraFunction[];
   entryFunctionId: string;
-  parameterValues: string[];
+  parameterValues: PandoraValue[];
 };
 
 export const editableNodeTypes: PandoraNodeType[] = [
