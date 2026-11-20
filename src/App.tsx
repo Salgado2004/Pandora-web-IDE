@@ -290,7 +290,13 @@ export default function App() {
       connections: [
         ...currentConnections,
         {
-          id: `${source.nodeId}-to-${target.nodeId}-${Date.now()}`,
+          id: `connection-${Math.max(
+            0,
+            ...currentConnections.map((connection) => {
+              const match = /^connection-(\d+)$/.exec(connection.id);
+              return match ? Number(match[1]) : 0;
+            }),
+          ) + 1}`,
           fromNodeId: source.nodeId,
           fromPort: source.port,
           toNodeId: target.nodeId,
@@ -369,7 +375,11 @@ export default function App() {
   }
 
   function addFunction() {
-    const id = `function-${Date.now()}`;
+    const usedIndexes = program.functions.map((item) => {
+      const match = /^function-(\d+)$/.exec(item.id);
+      return match ? Number(match[1]) : 0;
+    });
+    const id = `function-${Math.max(0, ...usedIndexes) + 1}`;
     const definition: PandoraFunction = {
       id,
       name: "nova-funcao",
@@ -386,15 +396,21 @@ export default function App() {
       functions: [...current.functions, definition],
       nodes: [
         ...current.nodes,
-        { id: `${id}-node`, type: "funcao", functionId: id, functionName: definition.name, x, y },
+        { id: `${id}-program-node`, type: "funcao", functionId: id, functionName: definition.name, x, y },
       ],
     }));
-    setSelectedNodeId(`${id}-node`);
+    setSelectedNodeId(`${id}-program-node`);
     setIsNodeMenuOpen(false);
   }
 
   function addNode(type: PandoraNode["type"]) {
-    const id = `${type}-${Date.now()}`;
+    const usedIndexes = nodes
+      .filter((node) => node.type === type)
+      .map((node) => {
+        const match = new RegExp(`^${type}-(\\d+)$`).exec(node.id);
+        return match ? Number(match[1]) : 0;
+      });
+    const id = `${type}-${Math.max(0, ...usedIndexes) + 1}`;
     const appState = api?.getAppState();
     const zoom = appState?.zoom.value ?? 1;
     const x = appState ? (appState.width / 2 - appState.scrollX) / zoom - 39 : 440;
@@ -414,8 +430,14 @@ export default function App() {
     };
     const newNodes = [newNode];
     if (type === "disor") {
+      const visorIndexes = nodes
+        .filter((node) => node.type === "visor")
+        .map((node) => {
+          const match = /^visor-(\d+)$/.exec(node.id);
+          return match ? Number(match[1]) : 0;
+        });
       newNodes.push({
-        id: `${id}-visor`,
+        id: `visor-${Math.max(0, ...visorIndexes) + 1}`,
         type: "visor",
         x: x + 220,
         y,
@@ -480,7 +502,13 @@ export default function App() {
             connection.fromPort !== sourcePort,
         ),
         {
-          id: `${selectedNodeId}-to-${toNodeId}-${Date.now()}`,
+          id: `connection-${Math.max(
+            0,
+            ...currentConnections.map((connection) => {
+              const match = /^connection-(\d+)$/.exec(connection.id);
+              return match ? Number(match[1]) : 0;
+            }),
+          ) + 1}`,
           fromNodeId: selectedNodeId,
           fromPort: sourcePort,
           toNodeId,

@@ -340,18 +340,21 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
   if (new Set(names).size !== names.length) {
     throw new Error("O arquivo Pandora possui funções com nomes duplicados");
   }
-  const functionIds = rawFunctions.map((item, index) => `function-${item.id ?? index}`);
+  const functionIds = rawFunctions.map((item, index) => `function-${index + 1}`);
   const functionIdByName = new Map(names.map((name, index) => [name, functionIds[index]]));
 
   const functions = rawFunctions.map((definition, functionIndex) => {
     if (!Array.isArray(definition.grafo)) {
       throw new Error(`A função ${names[functionIndex]} não possui um grafo válido`);
     }
+    const nodeIndexesByType = new Map<PandoraNodeType, number>();
     const nodes = definition.grafo.map((rawNode, index) => {
       const type = rawNode.tipo ?? rawNode.type;
       if (typeof type !== "string" || !isNodeType(type)) {
         throw new Error(`Nodo ${index} da função ${names[functionIndex]} possui tipo inválido`);
       }
+      const nodeIndex = (nodeIndexesByType.get(type) ?? 0) + 1;
+      nodeIndexesByType.set(type, nodeIndex);
       const position = readNodePosition(rawNode, index, definition.grafo!.length);
       const links = Array.isArray(rawNode.ligacoes) ? rawNode.ligacoes : [];
       const functionId = type === "encp"
@@ -368,7 +371,7 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
       }
       const inputValues = rawNode.inputs ?? rawNode.entradas ?? [];
       return {
-        id: `${functionIds[functionIndex]}-node-${index}`,
+        id: `${type}-${nodeIndex}`,
         type,
         x: position.x,
         y: position.y,
@@ -413,7 +416,7 @@ export function pandoraJsonToProgram(data: unknown): PandoraProgram {
             : fallbackToPort;
         incomingPorts.set(link, fallbackToPort + 1);
         connections.push({
-          id: `${functionIds[functionIndex]}-connection-${connections.length}`,
+          id: `connection-${connections.length + 1}`,
           fromNodeId: fromNode.id,
           fromPort: typeOutputPort(fromNode.type, linkIndex),
           toNodeId: toNode.id,
