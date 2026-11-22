@@ -16,7 +16,7 @@ import { pandoraJsonToProgram, programToPandoraJson } from "./serializer";
 import {
   Interpretador,
   normalizarArquivo,
-} from "@pandora-lang/interpreter";
+} from "@salgado2004/pandora-interpreter";
 import { EditorCanvas } from "./components/EditorCanvas";
 import { EditorHeader } from "./components/EditorHeader";
 import { ExecutionPanel } from "./components/ExecutionPanel";

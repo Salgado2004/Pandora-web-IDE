@@ -1,4 +1,4 @@
-declare module "@pandora-lang/interpreter" {
+declare module "@salgado2004/pandora-interpreter" {
   type PandoraValue =
     | string
     | number
